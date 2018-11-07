@@ -11,6 +11,7 @@ library(gpclib)
 library(rgdal)
 library(ggplot2)
 library(sp)
+library(RStoolbox)
 # library(plotly)
 # library(gapminder)
 library(data.table)
@@ -55,19 +56,27 @@ setkey(ancDataX,"id")
 dataX <- merge(dataX,ancDataX[,c(1,4,5)],by="id")
 
 
+# process images (change coordinates and crop) 
+# ortoPhoto <- raster("C:/Users/minunno/Documents/walt/Ortofoto_RGB.tif")
+# ops = brick("data/valeDaLama_raster.tif")
+# ll <- projectRaster(ortoPhoto, crs=crs(ops))
+# ops = raster("data/valeDaLama_raster.tif")
+# e <- extent(-8.64,-8.625,37.1375,37.1425)
+# rasterZoom <- crop(ops,e)
+# writeRaster(rasterZoom,filename = "data/valeDaLama_rasterZoom.tif")
 
 ###map settings
 myPalette <- colorRampPalette(brewer.pal(11, "Spectral"))
 sc <- scale_colour_gradientn(colours = myPalette(100), limits=c(0, 100))
-dem1 <- raster("data/DEMvdl.tif")
-dem2 <- raster("data/DEMvdl2.tif")
+# dem1 <- raster("data/DEMvdl.tif")
+# dem2 <- raster("data/DEMvdl2.tif")
+df = brick("data/valeDaLama_raster.tif")
 
 
 ###make maps and gif
 ndwi_map <- function(dateX){
   
-  gplot(dem2)+
-    geom_raster(aes(fill=value))+
+  ggRGB(df)+
     geom_point(
       
       data=dataX[capture_datetime_utc==dateX], mapping = aes(x = LON, y = LAT,  
@@ -77,6 +86,11 @@ ndwi_map <- function(dateX){
          subtitle = dateX) + 
      ylim(37.1375,37.142) +
      xlim(-8.6375,-8.629) +
+    theme(axis.line=element_blank(),axis.text.x=element_blank(),
+    axis.text.y=element_blank(),axis.ticks=element_blank(),
+    axis.title.x=element_blank(),
+    axis.title.y=element_blank())+
+    labs(colour = "%") +
   sc
   print(paste0("saving plot ", dateX))
   ggsave(filename = paste0("maps/hgm_ndwi_",as.numeric(dateX),".png"),
@@ -98,7 +112,7 @@ list.files(path = "maps/", pattern = "*.png", full.names = T) %>%
   image_write("maps/timeSeries.gif") # write to current dir
 
 
-qplot(dem1)
+# qplot(dem1)
 
 
 
@@ -144,6 +158,13 @@ qplot(dem1)
 # 
 # ###MAPS###
 # # mapSens <- readOGR("SoilSensorMap.kml")
+
+# lyr <- ogrListLayers("C:/Users/minunno/Documents/walt/SoilSensorMap.kml")
+# i=1
+# mykml <- readOGR("C:/Users/minunno/Documents/walt/SoilSensorMap.kml",lyr[[i]])
+# plot(mykml,col=i,xlim=c(-8.650416,-8.600416),ylim=c(37.14,37.15))
+# ctLn <- readOGR("C:/Users/minunno/GitHub/valeDaLama/data/02_Geo_contour_50cm.kml")
+# 
 # # qmap('Portugal',key = "AIzaSyCT68qsuTUafUKHWSfoqA7StuU1VcFdaZg")
 # 
 # lat <- selData$LAT
