@@ -40,13 +40,15 @@ sitesX <- intersect(ancData$FP_ID,allData$id)
 ancDataX <- ancData[which(ancData$FP_ID %in% sitesX)]
 dataX <- allData[which(allData$id %in% sitesX)]
 
-
 ###transform date and time data into posix class object
-dataX$capture_datetime_utc <-as.POSIXct(dataX$capture_datetime_utc)
-
+dataX$dates <-as.POSIXct(dataX$capture_datetime_utc)
 ###round dates at 15 minutes
-dataX$capture_datetime_utc <- round_date(dataX$capture_datetime_utc,"15 minutes")
-dates <- unique(dataX$capture_datetime_utc)
+dataX$dates <- round_date(dataX$dates,"15 minutes")
+
+###subset dates
+dataX <- subset(dataX, format(dates,'%H:%M')=='06:00' | format(dates,'%H:%M')=='16:00')
+
+dates <- unique(dataX$dates)
 
 
 ###merge dataX and coordinates
@@ -79,7 +81,7 @@ ndwi_map <- function(dateX){
   ggRGB(df)+
     geom_point(
       
-      data=dataX[capture_datetime_utc==dateX], mapping = aes(x = LON, y = LAT,  
+      data=dataX[dates==dateX], mapping = aes(x = LON, y = LAT,  
                                                              colour=soil_moisture_percent),
       size=3) +
     labs(title = "Soil Moisture %",
@@ -100,7 +102,7 @@ ndwi_map <- function(dateX){
 
 # dates
 # Step 1: Make Plots For dates Range 
-dates[round(seq(1,length(dates),length.out = 50))] %>% 
+dates %>% 
   map_df(ndwi_map)
 
 
@@ -118,15 +120,10 @@ list.files(path = "maps/", pattern = "*.png", full.names = T) %>%
 
 
 
-
-
-
-
-
 # # allData$id <- factor(allData$id)
 # 
 # 
-# p1 <- ggplot(data=allData, aes(x = capture_datetime_utc, y = light,
+# p1 <- ggplot(data=allData, aes(x = dates, y = light,
 #                                         group=id,color=id, shape=id)) +
 #   scale_shape_manual(values=1:nlevels(allData$id)) +
 #   # labs(title = "Policy")+
@@ -137,7 +134,7 @@ list.files(path = "maps/", pattern = "*.png", full.names = T) %>%
 #   geom_point(pch=".")
 # 
 # # p1 
-# p2 <- ggplot(data=allData, aes(x = capture_datetime_utc, y =soil_moisture_percent,
+# p2 <- ggplot(data=allData, aes(x = dates, y =soil_moisture_percent,
 #                                group=id,color=id, shape=id)) +
 #   scale_shape_manual(values=1:nlevels(allData$id)) +
 #   # labs(title = "Policy")+
@@ -190,15 +187,15 @@ list.files(path = "maps/", pattern = "*.png", full.names = T) %>%
 # sitesX <- unique(allData$id)[which(unique(allData$id) %in% ancData$FP_ID)]
 # 
 # Xdata <- allData[id %in% sitesX]
-# Xdata$capture_datetime_utc <- as.POSIX(Xdata$capture_datetime_utc)
+# Xdata$dates <- as.POSIX(Xdata$dates)
 # 
-# Xdata$capture_datetime_utc <-as.POSIXct(Xdata$capture_datetime_utc)
+# Xdata$dates <-as.POSIXct(Xdata$dates)
 # 
 # ###round to 15 minutes to match dates
-# Xdata$capture_datetime_utc <- round_date(Xdata$capture_datetime_utc,"15 minutes")
-# dates <- unique(Xdata$capture_datetime_utc)
+# Xdata$dates <- round_date(Xdata$dates,"15 minutes")
+# dates <- unique(Xdata$dates)
 # 
-# Xdata[capture_datetime_utc==dates[1]]
+# Xdata[dates==dates[1]]
 # 
 # setkey(Xdata,"id")
 # names(ancData)[3] <- 'id'
@@ -216,7 +213,7 @@ list.files(path = "maps/", pattern = "*.png", full.names = T) %>%
 # 
 # ciao <- as.data.table(dt3)
 # Xdata <- ciao
-# datesX <- Xdata$capture_datetime_utc[1]
+# datesX <- Xdata$dates[1]
 # #####################################################
 # 
 # dem <- raster("data/DEMvdl.tif")
@@ -228,7 +225,7 @@ list.files(path = "maps/", pattern = "*.png", full.names = T) %>%
 #   geom_raster(aes(fill=value))+
 #   geom_point(
 #     
-#   data=dataX[capture_datetime_utc==dates], mapping = aes(x = LON, y = LAT,  
+#   data=dataX[dates==dates], mapping = aes(x = LON, y = LAT,  
 #                                                       colour=soil_moisture_percent),
 #   size=3) +
 #   # ylim(37.1375,37.142) +
@@ -251,7 +248,7 @@ list.files(path = "maps/", pattern = "*.png", full.names = T) %>%
 #   facet_wrap(~ variable) +
 #   scale_fill_gradient(low = 'white', high = 'blue') +
 #   coord_equal() +
-#   ggplot(data = dataX[capture_datetime_utc==dates], mapping = aes(x = LON, y = LAT,  
+#   ggplot(data = dataX[dates==dates], mapping = aes(x = LON, y = LAT,  
 #                                                                   colour=soil_moisture_percent)) + 
 #   geom_point(size=3) +sc
 # 
@@ -274,7 +271,7 @@ list.files(path = "maps/", pattern = "*.png", full.names = T) %>%
 # 
 # ndwi_map <- function(dates,dataX){
 #   
-#   p= ggplot(data = dataX[capture_datetime_utc==dates], mapping = aes(x = LON, y = LAT,  
+#   p= ggplot(data = dataX[dates==dates], mapping = aes(x = LON, y = LAT,  
 #                                                               colour=soil_moisture_percent)) + 
 #     ylim(37.1375,37.14125) +
 #     xlim(-8.6375,-8.63) +
@@ -344,7 +341,7 @@ list.files(path = "maps/", pattern = "*.png", full.names = T) %>%
 # PlotOnStaticMap(Map)
 # 
 # 
-# data = Xdata[capture_datetime_utc==datesX][1:10]
+# data = Xdata[dates==datesX][1:10]
 # qmplot(LON, LAT, data = data,
 #        colour = soil_moisture_percent, size = I(3), darken = .3,api)
 # 
