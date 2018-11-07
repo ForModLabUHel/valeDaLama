@@ -69,6 +69,7 @@ dailyMean <- dataX %>%
 dailyMean <- data.table(dailyMean)
 dates <- unique(dailyMean$dates)
 
+dailyData <- merge(dailyMean,ancDataX[,c(1,4,5)],by="id")
 
 # process images (change coordinates and crop) 
 # ortoPhoto <- raster("C:/Users/minunno/Documents/walt/Ortofoto_RGB.tif")
@@ -129,4 +130,48 @@ list.files(path = "maps/", pattern = "*.png", full.names = T) %>%
 # qplot(dem1)
 
 
+
+
+
+
+
+
+
+###make maps and gif for daily means
+ndwi_map <- function(dateX){
+  
+  ggRGB(df)+
+    geom_point(
+      
+      data=dailyData[dates==dateX], mapping = aes(x = LON, y = LAT,  
+                                              colour=mean_SM),
+      size=3) +
+    labs(title = "Soil Moisture %",
+         subtitle = dateX) + 
+    ylim(37.1375,37.142) +
+    xlim(-8.6375,-8.629) +
+    theme(axis.line=element_blank(),axis.text.x=element_blank(),
+          axis.text.y=element_blank(),axis.ticks=element_blank(),
+          axis.title.x=element_blank(),
+          axis.title.y=element_blank())+
+    labs(colour = "%") +
+    sc
+  print(paste0("saving plot ", dateX))
+  ggsave(filename = paste0("mapsDaily/hgm_ndwi_",as.numeric(dateX),".png"),
+         width = 8,height=8,dpi = 150)
+}
+
+
+# dates
+# Step 1: Make Plots For dates Range 
+dates %>% 
+  map_df(ndwi_map)
+
+
+# Step 2: List those Plots, Read them in, and then make animation
+list.files(path = "mapsDaily/", pattern = "*.png", full.names = T) %>% 
+  map(image_read) %>% # reads each path file
+  image_join() %>% # joins image
+  image_animate(fps=2) %>% # animates, can opt for number of loops
+  image_write("maps/timeSeries.gif") # write to current dir
 
