@@ -1,23 +1,4 @@
-library(viridis) # nice color palette
-library(ggmap) # ggplot functionality for maps
-library(dplyr) # use for fixing up data
-library(readr) # reading in data/csv
-library(RColorBrewer) # for color palettes
-library(purrr) # for mapping over a function
-library(magick) # this is call to animate/read pngs
-
-library(maptools)
-library(gpclib)
-library(rgdal)
-library(ggplot2)
-library(sp)
-library(RStoolbox)
-library(data.table)
-library(stringr)
-library(RgoogleMaps)
-library(lubridate)
-library(raster)
-library(rasterVis)
+source("utils.r")
 
 newData <- data.table()
 files <- list.files(path= "data/collectedData/",pattern = "\\.csv$", recursive = TRUE)
@@ -35,7 +16,6 @@ ancData <- fread("data/ancData.txt")
 # newData[id=="57E5",id:= ancData$FP_ID[21]]
 ### and take IDs that are in common 
 sitesX <- intersect(ancData$FP_ID,newData$id)
-which(ancData$FP_ID %in% unique(newData$id))
 
 ###consider only sites that are in common (siteX)
 ancDataX <- ancData[which(ancData$FP_ID %in% sitesX)]
@@ -76,11 +56,12 @@ dates <- unique(allData$dates)
 dailyMean <- allData %>%
   mutate(dates = floor_date(dates,unit="day")) %>%
   group_by(dates,id) %>%
-  summarize(mean_SM = mean(soil_moisture_percent))
+  summarize(soil_moisture_percent = mean(soil_moisture_percent))
 
 dailyMean <- data.table(dailyMean)
 dailyData <- merge(dailyMean,ancDataX[,c(1,4,5,10)],by="id")
 
+dailyData$dates <- as.character(dailyData$dates)
 fwrite(dailyData, file = "data/output/dailyData.csv")
 
 
