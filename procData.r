@@ -1,4 +1,7 @@
-source("utils.r")
+library(lubridate)
+library(stringr)
+library(data.table)
+# source("utils.r")
 
 newData <- data.table()
 files <- list.files(path= "data/collectedData/",pattern = "\\.csv$", recursive = TRUE)
@@ -25,7 +28,6 @@ dataX <- newData[which(newData$id %in% sitesX)]
 dataX$dates <-as.POSIXct(dataX$capture_datetime_utc)
 ###round dates at 15 minutes
 dataX$dates <- round_date(dataX$dates,"15 minutes")
-
 ancDataX[, longName:= do.call(paste,.SD), .SDcols=-c(4:9)]
 
 ###merge dataX and coordinates
@@ -33,7 +35,8 @@ setkey(dataX,"id")
 names(ancDataX)[1] <- 'id'
 setkey(ancDataX,"id")
 dataX <- merge(dataX,ancDataX[,c(1,4,5,10)],by="id")
-
+datesAll <- as.data.table(datesAll)
+setnames(datesAll,"dates")
 
 dataX$dates <- as.character(dataX$dates)
 
@@ -44,8 +47,18 @@ allData <- rbind(oldData, dataX[,..fieldNames])
 allData <- setkey(allData, NULL)
 allData <- unique(allData)
 
-##write the new allData files
-fwrite(allData, file = "data/output/allData.csv")
+
+allData$dates <- as.POSIXct(allData$dates)
+
+datesAll <- seq.POSIXt(min(allData$dates), max(allData$dates), by = "15 min")
+datesAll <- as.data.table(datesAll); setnames(datesAll,"dates")
+setkey(allData,"dates");setkey(datesAll,"dates")
+
+allData <- merge(dataX,datesAll,by="dates")
+
+myData <- list()
+for(i in unique(allData$id)) myData[[i]] <- merge(allData[id==i],datesAll,by="dates",all=T)
+
 
 
 
@@ -65,3 +78,22 @@ dailyData$dates <- as.character(dailyData$dates)
 fwrite(dailyData, file = "data/output/dailyData.csv")
 
 
+##write the new allData files
+allData$dates <- as.character(allData$dates)
+fwrite(allData, file = "data/output/allData.csv")
+
+nMeas <- length(datesAll$dates)
+resumeTab <- as.data.table(unique(allData$id))
+setnames(resumeTab,"id")
+resumeTab[,nNAs_soilMes:=NA_integer_]
+resumeTab[,NAsRatio_soilMes:=NA_real_]
+resumeTab[,first_soilMes:=as.POSIXct(NA)]
+resumeTab[,last_soilMes:=as.POSIXct(NA)]
+for(i in unique(allData$id)){
+  resumeTab[id==i,nNAs_soilMes:=sum(is.na(myData[[i]]$soil_moisture_percent))]
+  resumeTab[id==i,NAsRatio_soilMes:=sum(is.na(myData[[i]]$soil_moisture_percent))/nMeas]
+  rangeX <- range(which(!is.na(myData[[i]]$soil_moisture_percent)))
+  resumeTab[id==i,first_soilMes:=myData[[i]]$dates[rangeX[1]]]
+  resumeTab[id==i,last_soilMes:=myData[[i]]$dates[rangeX[2]]]
+  
+} 
