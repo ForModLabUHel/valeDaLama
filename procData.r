@@ -14,6 +14,9 @@ for(i in 1:length(files)){
   newData <- rbind(newData,dataX)
 }
 
+
+## walt's comment
+
 ###read ancilary data
 ancData <- fread("data/ancData.txt")
 # newData[id=="57E5",id:= ancData$FP_ID[21]]
