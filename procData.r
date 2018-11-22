@@ -71,17 +71,16 @@ for(i in unique(allData$id)) myData[[i]] <- merge(allData[id==i],datesAll,by="da
 nMeas <- length(datesAll$dates)
 resumeTab <- as.data.table(unique(allData$id))
 setnames(resumeTab,"id")
-resumeTab[,nNAs_soilMes:=NA_integer_]
-resumeTab[,NAsRatio_soilMes:=NA_real_]
 resumeTab[,first_soilMes:=as.POSIXct(NA)]
 resumeTab[,last_soilMes:=as.POSIXct(NA)]
+resumeTab[,nNAs_soilMes:=NA_integer_]
+resumeTab[,NAsRatio_soilMes:=NA_real_]
 for(i in unique(allData$id)){
-  resumeTab[id==i,nNAs_soilMes:=sum(is.na(myData[[i]]$soil_moisture_percent))]
-  resumeTab[id==i,NAsRatio_soilMes:=sum(is.na(myData[[i]]$soil_moisture_percent))/nMeas]
   rangeX <- range(which(!is.na(myData[[i]]$soil_moisture_percent)))
   resumeTab[id==i,first_soilMes:=myData[[i]]$dates[rangeX[1]]]
   resumeTab[id==i,last_soilMes:=myData[[i]]$dates[rangeX[2]]]
-  
+  resumeTab[id==i,nNAs_soilMes:=sum(is.na(myData[[i]]$soil_moisture_percent))-rangeX[1]]
+  resumeTab[id==i,NAsRatio_soilMes:=(sum(is.na(myData[[i]]$soil_moisture_percent))-rangeX[1])/(nMeas-rangeX[1])]
 } 
 
 
@@ -94,18 +93,27 @@ fwrite(resumeTab,"/Users/walterludwick/Documents/data_vdl/qualCheck.csv")
 # 
 # 
 # ##compute daily mean
-# allData$dates <- as.POSIXct(allData$dates)
-# dates <- unique(allData$dates)
-# 
-# dailyMean <- allData %>%
-#   mutate(dates = floor_date(dates,unit="day")) %>%
-#   group_by(dates,id) %>%
-#   summarize(soil_moisture_percent = mean(soil_moisture_percent))
-# 
-# dailyMean <- data.table(dailyMean)
-# dailyData <- merge(dailyMean,ancDataX[,c(1,4,5,10)],by="id")
-# 
-# dailyData$dates <- as.character(dailyData$dates)
-# fwrite(dailyData, file = "data/output/dailyData.csv")
-# 
-# 
+dailyData <- data.table()
+for(i in unique(allData$id)){
+  dailyMean <- myData[[i]] %>%
+    mutate(dates = floor_date(dates,unit="day")) %>%
+    group_by(dates) %>%
+    summarize(soil_moisture_percent = mean(soil_moisture_percent,na.rm=T))
+    
+  NAs_Ratio <- myData[[i]] %>%
+    mutate(dates = floor_date(dates,unit="day")) %>%
+    group_by(dates) %>%
+    summarize(NAs_Ratio = sum(is.na(soil_moisture_percent))/length(soil_moisture_percent))
+    
+  # 
+  dailyMean <- data.table(dailyMean)
+  NAs_Ratio <- data.table(NAs_Ratio)
+  dailyMean <- merge(dailyMean,NAs_Ratio)
+  dailyMean[,id:= i]
+  dailyMean$soil_moisture_percent[which(is.nan(dailyMean$soil_moisture_percent))] <- NA
+  dailyMean$dSM[2:nrow(dailyMean)] = dailyMean$soil_moisture_percent[2:nrow(dailyMean)]-dailyMean$soil_moisture_percent[1:(nrow(dailyMean)-1)]
+  dailyData <- rbind(dailyData,dailyMean)
+}
+
+dailyData$dates <- as.character(dailyData$dates)
+fwrite(dailyData, file = "/Users/walterludwick/Documents/data_vdl/dailyData.csv")
