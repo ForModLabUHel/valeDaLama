@@ -1,6 +1,7 @@
 library(lubridate)
 library(stringr)
 library(data.table)
+library(dplyr)
 # source("utils.r")
 
 folderName <- "data/collectedData/"
@@ -85,7 +86,6 @@ for(i in unique(allData$id)){
 
 
 ##write the new allData files
-allData$dates <- as.character(allData$capture_datetime_utc)
 allData$dates <- as.character(allData$dates)
 fwrite(allData,"/Users/walterludwick/Documents/data_vdl/allData.csv")
 fwrite(resumeTab,"/Users/walterludwick/Documents/data_vdl/qualCheck.csv")
