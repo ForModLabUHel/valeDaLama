@@ -1,5 +1,6 @@
 library(shiny)
 library(data.table)
+library(ggplot2)
 dailyData <- fread("C:/Users/minunno/Documents/vdlData/processedData/dailyData.csv")
 # dailyData <- dailyData[id %in% unique(dailyData$id)[1:2]]
 dailyData$dates <- as.Date(dailyData$dates)
@@ -15,14 +16,18 @@ ui <- fluidPage(
     
     # Sidebar panel for inputs ----
     sidebarPanel(
-      # Input: Selector for choosing dataset ----
-      selectInput(inputId = "dataset",
-                  label = "Choose a sensor:",
-                  choices = unique(dailyData$id)),
-      # Input: Selector for choosing dataset ----
       selectInput(inputId = "variable",
                   label = "Choose variable:",
-                  choices = names(dailyData)[c(2,3,5)])
+                  choices = names(dailyData)[c(2,3,5)]),
+      checkboxGroupInput(inputId = "dataset", label = "Choose a sensor:", 
+                         choices=unique(dailyData$id),
+                         selected = NULL, inline = FALSE)
+            # Input: Selector for choosing dataset ----
+      # selectInput(inputId = "dataset",
+      #             label = "Choose a sensor:",
+      #             choices = unique(dailyData$id)),
+      # # Input: Selector for choosing dataset ----
+      
       
     ),
     
@@ -54,16 +59,29 @@ server <- function(input, output) {
   # })
   output$distPlot <- renderPlot({
 
-    x    <- dailyData[id==input$dataset,dates]
+    # x    <- dailyData[id==input$dataset,dates]
     # print(input$variable)
-    y    <- dailyData[id==input$dataset,input$variable,with=FALSE]
+    subData    <- dailyData[id %in% input$dataset,c("id","dates",input$variable),with=FALSE]
     # print(length(y))
     # print(length(x))
+    dailyData$id <- factor(dailyData$id)
+   
+    ggplot(data=subData, 
+           aes_string(x = "dates", y = input$variable,group="id",color="id", shape="id")) +
+      scale_shape_manual(values=1:nlevels(dailyData$id)) +
+      # labs(title = "Dead Wood")+
+      xlab("date") +
+      ylab(input$variable) +
+      # xlim(2012,2100) + 
+      # ylim(0,5500) + 
+      # geom_line()
+      geom_point()
+    
     
     # hist(x, breaks = bins, col = "#75AADB", border = "white",
     #      xlab = "Waiting time to next eruption (in mins)",
     #      main = "Histogram of waiting times")
-    plot(x,y[[1]],pch=20,ylab =input$variable,xlab="day" ,main=paste0("sensor ID: ",input$dataset))
+    # plot(x,y[[1]],pch=20,ylab =input$variable,xlab="day" ,main=paste0("sensor ID: ",input$dataset))
   })
   
 }
