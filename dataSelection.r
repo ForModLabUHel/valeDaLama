@@ -1,17 +1,34 @@
 # source("utilis.r");source("plots&maps_utils.R")
 library(data.table)
-dataX <- fread("data/processedData/allData.csv")
-dataX$dates <- as.POSIXct(dataX$dates)
-date1 <- as.Date("2018-10-29")
-date2 <- as.Date("2018-11-10")
+
+ancData <- fread("data/ancData.txt")
+
+allData <- fread("C:/Users/minunno/Documents/vdlData/processedData/allData.csv")
+allData$dates <- as.POSIXct(allData$dates)
+date1 <- as.Date("2018-10-01")
+date2 <- as.Date("2018-10-24")
+
+
+###subset dataset by management
+sites=ancDataX$longName[which(grepl("MB",ancDataX$longName))]
+subDataX <- allData[longName %in% sites]
 
 
 ###subset dataset
 ##extract measurements date range
-subDataX <- subset(dataX, dates > date1 & dates < date2)
+subDataX <- subset(subDataX, dates > date1 & dates < date2)
+
+###hour mean
+subDataX[,hour:=as.POSIXlt(subDataX$dates)$hour]
+hourMean <- subDataX[,mean(soil_moisture_percent),by=list(id,hour)]
+
+###different time steps (e.g.,3 hours)
+subDataX[,hourX:=cut(subDataX$dates, breaks="1 hours")]
+hourXmean <- subDataX[,mean(soil_moisture_percent),by=list(id,hourX)]
+
 
 ##extract measurements at certain time
-subDataX <- subset(dataX, format(dates,'%H:%M')=='06:00' | format(dates,'%H:%M')=='16:00')
+subDataX <- subset(subDataX, format(dates,'%H:%M')=='06:00' | format(dates,'%H:%M')=='16:00')
 dates <- unique(subDataX$dates)
 
 # # dates
