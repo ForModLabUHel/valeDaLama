@@ -21,7 +21,8 @@ ui <- fluidPage(
     sidebarPanel(
       selectInput(inputId = "variable",
                   label = "Choose variable:",
-                  choices = c("dSM",names(allData)[6:8])),
+                  choices = c("light", "air_temperature_celsius",
+                              "soil_moisture_percent","dSM")),
     # Input: Selector for choosing timestep ----
       selectInput(inputId = "timestep",
                   label = "Choose a timestep:",
