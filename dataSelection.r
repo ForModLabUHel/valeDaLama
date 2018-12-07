@@ -1,6 +1,6 @@
 source("utilis.r");source("plots&maps_utils.R")
 
-dataX <- fread("data/output/allData.csv")
+dataX <- fread("/Users/walterludwick/Documents/data_vdl/allData.csv")
 dataX$dates <- as.POSIXct(dataX$dates)
 date1 <- as.Date("2018-10-29")
 date2 <- as.Date("2018-11-10")
