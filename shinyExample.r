@@ -2,18 +2,20 @@ library(lubridate);library(shiny)
 library(data.table)
 library(ggplot2)
 library(dplyr)
-allData <- fread("/Users/walterludwick/Documents/data_vdl/allData.csv") #path for wl
-# allData <- fread("C:/Users/minunno/Documents/vdlData/processedData/allData.csv") #path for fm
+
+# allData <- fread("/Users/walterludwick/Documents/data_vdl/allData.csv") #path for wl
+allData <- fread("C:/Users/minunno/Documents/vdlData/processedData/allData.csv") #path for fm
 # load("data/consistData.rdata") ##read data for which fp_id and serial number are consistent
 # allData <- allData[serial_number %in% consistData] ##select data for which fp_id and serial number are consistent
 allData$dates <- as.POSIXct(allData$dates)
 allData$dSM <- NA
+selTab <- fread("data/selTab.csv")
 
 # Define UI for app that draws a histogram ----
 ui <- fluidPage(
   
   # App title ----
-  titlePanel("Hello Shiny!"),
+  titlePanel("Vale da lama GROW sensors"),
   
   # Sidebar layout with input and output definitions ----
   sidebarLayout(
@@ -23,11 +25,13 @@ ui <- fluidPage(
       selectInput(inputId = "Xaxis",
                   label = "Choose variable for x axis:",
                   choices = c("light", "air_temperature_celsius",
-                              "soil_moisture_percent","dSM","dates")),
+                              "soil_moisture_percent","dSM","dates"),
+                  selected = "dates"),
       selectInput(inputId = "Yaxis",
                   label = "Choose variable for y axis:",
                   choices = c("light", "air_temperature_celsius",
-                              "soil_moisture_percent","dSM","dates")),
+                              "soil_moisture_percent","dSM","dates"),
+                  selected = "soil_moisture_percent"),
       # Input: Selector for choosing timestep ----
       selectInput(inputId = "timestep",
                   label = "Choose a timestep:",
@@ -40,9 +44,16 @@ ui <- fluidPage(
                 label = "Choose end date:",
                 choices = unique(ceiling_date(allData$dates, "day")),
                 selected = max(unique(ceiling_date(allData$dates, "day")))),
-    
+    selectizeInput(inputId = "selByClass",
+                   label = "select sensors by class", 
+                   choices = c(unique(selTab$CLASS)), multiple = TRUE,
+                   selected = "all"),
+    selectizeInput(inputId = "selByVdl",
+                   label = "select sensors by vdl_id", 
+                   choices = c(unique(selTab$VDL_ID)), multiple = TRUE,
+                   selected = "all"),
     checkboxGroupInput(inputId = "dataset", label = "Choose a sensor:", 
-                         choices=unique(allData$longName),
+                         choices=unique(c(input$selByVdl,input$selByClass)),
                          selected = NULL, inline = FALSE)
     ),
     
@@ -57,7 +68,7 @@ ui <- fluidPage(
 )
 
 # Define server logic required to draw a histogram ----
-server <- function(input, output) {
+server <- function(input, output,session) {
   
   # Histogram of the Old Faithful Geyser Data ----
   # with requested number of bins
@@ -72,12 +83,33 @@ server <- function(input, output) {
   # datasetInput <- reactive({
   #   allData[id==input$dataset]
   # })
+  observe({
+    siteVdl <- selTab$longName[selTab$VDL_ID %in% input$selByVdl]
+    siteClass <- selTab$longName[selTab$CLASS %in% input$selByClass]
+    # siteSel <- input$dataset
+    # if(input$selByVdl=="all" & input$selByVdl=="all"){
+    #   sites <- unique(allData$longName)
+    # }else{
+      sites <- unique(c(siteVdl,siteClass))
+    # }
+
+
+    # Can use character(0) to remove all choices
+    if (is.null(sites))
+      sites <- character(0)
+    
+    updateCheckboxGroupInput(session, "dataset",
+                             label = "Choose a sensor:",
+                             choices = sites)
+  })
   output$distPlot <- renderPlot({
 
     # x    <- allData[id==input$dataset,dates]
     # print(input$variable)
+
+    sites <- input$dataset
     subData <- allData[dates %between% c(input$startdate, input$enddate)]
-    subData    <- subData[longName %in% input$dataset]
+    subData    <- subData[longName %in% sites]
     subData[,dates:=cut(subData$dates, breaks=input$timestep)]
     subData <- subData[, lapply(.SD, mean, na.rm=TRUE), by=list(longName,dates), 
                        .SDcols=c("light","soil_moisture_percent", "air_temperature_celsius") ] 
