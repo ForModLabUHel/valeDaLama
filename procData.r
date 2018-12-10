@@ -4,13 +4,13 @@ library(data.table)
 library(dplyr)
 # source("utils.r")
 
-folderName <- "data/collectedData/"
+folderName <- "C:/Users/minunno/Documents/vdlData/newDataCollection/"
 newData <- data.table()
 files <- list.files(path= folderName,pattern = "\\.csv$", recursive = TRUE)
 fieldNames <- c("id","capture_datetime_utc","fertilizer_level","light","soil_moisture_percent","air_temperature_celsius","dates","LAT","LON","longName")
 
 for(i in 1:length(files)){
-  dataX <- fread(paste0("data/collectedData/",files[i]))
+  dataX <- fread(paste0(folderName,files[i]))
   fileX  <- str_split(files[i],"\\. |\\.| ")
   dataX[,id:=fileX[[1]][3]]
   newData <- rbind(newData,dataX)
@@ -47,11 +47,11 @@ dataX <- merge(dataX,ancDataX[,c(1,4,5,10)],by="id")
 dataX$dates <- as.character(dataX$dates)
 
 ###If running for the firt time
-# fwrite(dataX,"/Users/walterludwick/Documents/data_vdl/allData.csv")
+# fwrite(dataX,"C:/Users/minunno/Documents/vdlData/processedData/allData.csv")
 
 # dataX[,..fieldNames]
 ####merge two readings and remove duplicates
-oldData <- fread("/Users/walterludwick/Documents/data_vdl/allData.csv")
+oldData <- fread("C:/Users/minunno/Documents/vdlData/processedData/allData.csv")
 allData <- rbind(oldData[,..fieldNames], dataX[,..fieldNames])
 allData <- setkey(allData, NULL)
 allData <- unique(allData)
@@ -87,8 +87,8 @@ for(i in unique(allData$id)){
 
 ##write the new allData files
 allData$dates <- as.character(allData$dates)
-fwrite(allData,"/Users/walterludwick/Documents/data_vdl/allData.csv")
-fwrite(resumeTab,"/Users/walterludwick/Documents/data_vdl/qualCheck.csv")
+fwrite(allData,"C:/Users/minunno/Documents/vdlData/processedData/allData.csv")
+fwrite(resumeTab,"C:/Users/minunno/Documents/vdlData/processedData/qualCheck.csv")
 # 
 # 
 # 
@@ -99,12 +99,12 @@ for(i in unique(allData$id)){
     mutate(dates = floor_date(dates,unit="day")) %>%
     group_by(dates) %>%
     summarize(soil_moisture_percent = mean(soil_moisture_percent,na.rm=T))
-    
+  
   NAs_Ratio <- myData[[i]] %>%
     mutate(dates = floor_date(dates,unit="day")) %>%
     group_by(dates) %>%
     summarize(NAs_Ratio = sum(is.na(soil_moisture_percent))/length(soil_moisture_percent))
-    
+  
   # 
   dailyMean <- data.table(dailyMean)
   NAs_Ratio <- data.table(NAs_Ratio)
@@ -116,4 +116,11 @@ for(i in unique(allData$id)){
 }
 
 dailyData$dates <- as.character(dailyData$dates)
-fwrite(dailyData, file = "/Users/walterludwick/Documents/data_vdl/dailyData.csv")
+fwrite(dailyData, file = "C:/Users/minunno/Documents/vdlData/processedData/dailyData.csv")
+
+
+####Move processed csv file to storedData folder and remove original folder
+files <- list.files(path= folderName)
+file.copy(paste0("C:/Users/minunno/Documents/vdlData/newDataCollection/",files), 
+          "C:/Users/minunno/Documents/vdlData/storedData/", recursive=TRUE)
+unlink(paste0("C:/Users/minunno/Documents/vdlData/newDataCollection/",files), recursive=TRUE)

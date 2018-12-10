@@ -216,8 +216,8 @@ p1 <- ggplot(data=dailyData[longName %in% sites],
   ylab("Soil Moisture") +
   # xlim(2012,2100) + 
   # ylim(0,5500) + 
-  geom_line()
-# geom_point()
+  # geom_line()
+geom_point()
 # geom_point(size=1)
 # p1
 
