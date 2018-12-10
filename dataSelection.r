@@ -12,6 +12,11 @@ date2 <- as.Date("2018-10-24")
 ###subset dataset by management
 sites=ancDataX$longName[which(grepl("MB",ancDataX$longName))]
 subDataX <- allData[longName %in% sites]
+=======
+dataX <- fread("/Users/walterludwick/Documents/data_vdl/allData.csv")
+dataX$dates <- as.POSIXct(dataX$dates)
+date1 <- as.Date("2018-10-29")
+date2 <- as.Date("2018-11-10")
 
 
 ###subset dataset
