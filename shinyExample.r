@@ -46,14 +46,12 @@ ui <- fluidPage(
                 selected = max(unique(ceiling_date(allData$dates, "day")))),
     selectizeInput(inputId = "selByClass",
                    label = "select sensors by class", 
-                   choices = c(unique(selTab$CLASS)), multiple = TRUE,
-                   selected = "all"),
+                   choices = unique(selTab$CLASS), multiple = TRUE),
     selectizeInput(inputId = "selByVdl",
                    label = "select sensors by vdl_id", 
-                   choices = c(unique(selTab$VDL_ID)), multiple = TRUE,
-                   selected = "all"),
+                   choices = unique(selTab$VDL_ID), multiple = TRUE),
     checkboxGroupInput(inputId = "dataset", label = "Choose a sensor:", 
-                         choices=unique(c(input$selByVdl,input$selByClass)),
+                         choices=unique(allData$longName),
                          selected = NULL, inline = FALSE)
     ),
     
@@ -87,16 +85,16 @@ server <- function(input, output,session) {
     siteVdl <- selTab$longName[selTab$VDL_ID %in% input$selByVdl]
     siteClass <- selTab$longName[selTab$CLASS %in% input$selByClass]
     # siteSel <- input$dataset
-    # if(input$selByVdl=="all" & input$selByVdl=="all"){
-    #   sites <- unique(allData$longName)
-    # }else{
+    if(is.null(input$selByVdl) & is.null(input$selByClass)){
+      sites <- unique(allData$longName)
+    }else{
       sites <- unique(c(siteVdl,siteClass))
-    # }
+    }
 
 
     # Can use character(0) to remove all choices
-    if (is.null(sites))
-      sites <- character(0)
+    # if (is.null(sites))
+    #   sites <- unique(allData$longName)
     
     updateCheckboxGroupInput(session, "dataset",
                              label = "Choose a sensor:",
@@ -107,29 +105,30 @@ server <- function(input, output,session) {
     # x    <- allData[id==input$dataset,dates]
     # print(input$variable)
 
-    sites <- input$dataset
-    subData <- allData[dates %between% c(input$startdate, input$enddate)]
-    subData    <- subData[longName %in% sites]
-    subData[,dates:=cut(subData$dates, breaks=input$timestep)]
-    subData <- subData[, lapply(.SD, mean, na.rm=TRUE), by=list(longName,dates), 
-                       .SDcols=c("light","soil_moisture_percent", "air_temperature_celsius") ] 
-    subData <- subData %>% group_by(longName) %>% 
-      mutate(dSM = order_by(dates, soil_moisture_percent - lag(soil_moisture_percent)))
-    
-    
-    subData$longName <- factor(subData$longName)
-    subData$dates <- as.Date(subData$dates)
-    ggplot(data=subData,
-           aes_string(x = input$Xaxis, y = input$Yaxis,group="longName",color="longName", shape="longName")) +
-      scale_shape_manual(values=1:nlevels(subData$longName)) +
-      xlab(input$Xaxis) +
-      ylab(input$Yaxis) +
-      # scale_x_date(labels = date_format("%m-%Y"))+
-      # theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-      # scale_x_discrete(breaks = round(seq(as.Date(input$startdate), as.Date(input$enddate),
-      #                                       length.out = 5),1)) +
-      # geom_line()
-      geom_point()
+      sites <- input$dataset
+      subData <- allData[dates %between% c(input$startdate, input$enddate)]
+      subData    <- subData[longName %in% sites]
+      if(nrow(subData)>1) subData[,dates:=cut(subData$dates, breaks=input$timestep)]
+      subData <- subData[, lapply(.SD, mean, na.rm=TRUE), by=list(longName,dates),
+                         .SDcols=c("light","soil_moisture_percent", "air_temperature_celsius") ]
+      subData <- subData %>% group_by(longName) %>%
+        mutate(dSM = order_by(dates, soil_moisture_percent - lag(soil_moisture_percent)))
+
+
+      subData$longName <- factor(subData$longName)
+      subData$dates <- as.Date(subData$dates)
+
+      ggplot(data=subData,
+             aes_string(x = input$Xaxis, y = input$Yaxis,group="longName",color="longName", shape="longName")) +
+        scale_shape_manual(values=1:nlevels(subData$longName)) +
+        xlab(input$Xaxis) +
+        ylab(input$Yaxis) +
+        # scale_x_date(labels = date_format("%m-%Y"))+
+        # theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+        # scale_x_discrete(breaks = round(seq(as.Date(input$startdate), as.Date(input$enddate),
+        #                                       length.out = 5),1)) +
+        # geom_line()
+        geom_point()
 
         # hist(x, breaks = bins, col = "#75AADB", border = "white",
     #      xlab = "Waiting time to next eruption (in mins)",
