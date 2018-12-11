@@ -4,13 +4,15 @@ library(data.table)
 library(dplyr)
 # source("utils.r")
 
-folderName <- "C:/Users/minunno/Documents/vdlData/newDataCollection/"
+path <- "/Users/walterludwick/Dropbox/sensing_mission/data_vdl/" #wl
+# path <- "C:/Users/minunno/Documents/vdlData/" #fm
+folderNewData <- paste0(path,"newDataCollection/")
 newData <- data.table()
-files <- list.files(path= folderName,pattern = "\\.csv$", recursive = TRUE)
+files <- list.files(path= folderNewData,pattern = "\\.csv$", recursive = TRUE)
 fieldNames <- c("id","capture_datetime_utc","fertilizer_level","light","soil_moisture_percent","air_temperature_celsius","dates","LAT","LON","longName")
 
 for(i in 1:length(files)){
-  dataX <- fread(paste0(folderName,files[i]))
+  dataX <- fread(paste0(folderNewData,files[i]))
   fileX  <- str_split(files[i],"\\. |\\.| ")
   dataX[,id:=fileX[[1]][3]]
   newData <- rbind(newData,dataX)
@@ -47,11 +49,11 @@ dataX <- merge(dataX,ancDataX[,c(1,4,5,10)],by="id")
 dataX$dates <- as.character(dataX$dates)
 
 ###If running for the firt time
-# fwrite(dataX,"C:/Users/minunno/Documents/vdlData/processedData/allData.csv")
+# fwrite(dataX,paste0(path,"processedData/allData.csv"))
 
 # dataX[,..fieldNames]
 ####merge two readings and remove duplicates
-oldData <- fread("C:/Users/minunno/Documents/vdlData/processedData/allData.csv")
+oldData <- fread(paste0(path,"processedData/allData.csv"))
 allData <- rbind(oldData[,..fieldNames], dataX[,..fieldNames])
 allData <- setkey(allData, NULL)
 allData <- unique(allData)
@@ -87,8 +89,8 @@ for(i in unique(allData$id)){
 
 ##write the new allData files
 allData$dates <- as.character(allData$dates)
-fwrite(allData,"C:/Users/minunno/Documents/vdlData/processedData/allData.csv")
-fwrite(resumeTab,"C:/Users/minunno/Documents/vdlData/processedData/qualCheck.csv")
+fwrite(allData,paste0(path,"processedData/allData.csv"))
+fwrite(resumeTab,paste0(path,"processedData/qualCheck.csv"))
 # 
 # 
 # 
@@ -116,11 +118,13 @@ for(i in unique(allData$id)){
 }
 
 dailyData$dates <- as.character(dailyData$dates)
-fwrite(dailyData, file = "C:/Users/minunno/Documents/vdlData/processedData/dailyData.csv")
+fwrite(dailyData, file = paste0(path,"processedData/dailyData.csv"))
 
 
 ####Move processed csv file to storedData folder and remove original folder
-files <- list.files(path= folderName)
-file.copy(paste0("C:/Users/minunno/Documents/vdlData/newDataCollection/",files), 
-          "C:/Users/minunno/Documents/vdlData/storedData/", recursive=TRUE)
-unlink(paste0("C:/Users/minunno/Documents/vdlData/newDataCollection/",files), recursive=TRUE)
+files <- list.files(path= folderNewData)
+foldName <- paste0(path,"storedData/processed_", Sys.Date())
+dir.create(foldName)
+file.copy(paste0(folderNewData,files), 
+          paste0(foldName,"/"), recursive=TRUE)
+unlink(paste0(folderNewData,files), recursive=TRUE)
