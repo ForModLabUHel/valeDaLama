@@ -17,6 +17,9 @@ download.file("https://www.dropbox.com/s/ngaexvxlazshb0j/allData.csv?dl=1",
 allData <- fread( "./dropbox/allData.csv" )
 unlink( "dropbox", recursive = TRUE )
 
+<<<<<<< HEAD
+>>>>>>> 5a6608e8d325f9caa78b3e79ba1e42fba73d16d5
+=======
 >>>>>>> 5a6608e8d325f9caa78b3e79ba1e42fba73d16d5
 # load("data/consistData.rdata") ##read data for which fp_id and serial number are consistent
 # allData <- allData[serial_number %in% consistData] ##select data for which fp_id and serial number are consistent
