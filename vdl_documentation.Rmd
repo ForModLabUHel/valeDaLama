@@ -43,8 +43,8 @@ library(data.table)
 library(ggplot2)
 library(dplyr)
 
-# allData <- fread("/Users/walterludwick/Documents/data_vdl/allData.csv") #path for wl
-allData <- fread("C:/Users/minunno/Documents/vdlData/processedData/allData.csv") #path for fm
+allData <- fread("/Users/walterludwick/Documents/data_vdl/allData.csv") #path for wl
+# allData <- fread("C:/Users/minunno/Documents/vdlData/processedData/allData.csv") #path for fm
 
 # #### read file from DropBox
 # dir.create( "dropbox" )
