@@ -3,8 +3,8 @@ library(data.table)
 library(ggplot2)
 library(dplyr)
 
-# allData <- fread("/Users/walterludwick/Documents/data_vdl/allData.csv") #path for wl
-allData <- fread("C:/Users/minunno/Documents/vdlData/processedData/allData.csv") #path for fm
+allData <- fread("/Users/walterludwick/Documents/data_vdl/allData.csv") #path for wl
+# allData <- fread("C:/Users/minunno/Documents/vdlData/processedData/allData.csv") #path for fm
 # load("data/consistData.rdata") ##read data for which fp_id and serial number are consistent
 # allData <- allData[serial_number %in% consistData] ##select data for which fp_id and serial number are consistent
 allData$dates <- as.POSIXct(allData$dates)
