@@ -49,7 +49,7 @@ dataX <- merge(dataX,ancDataX[,c(1,4,5,10)],by="id")
 dataX$dates <- as.character(dataX$dates)
 
 ###If running for the firt time
-fwrite(dataX,paste0(path,"processedData/allData.csv"))
+# fwrite(dataX,paste0(path,"processedData/allData.csv"))
 
 # dataX[,..fieldNames]
 ####merge two readings and remove duplicates
