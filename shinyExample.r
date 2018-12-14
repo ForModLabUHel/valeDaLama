@@ -4,6 +4,7 @@ library(ggplot2)
 library(dplyr)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 allData <- fread("/Users/walterludwick/Documents/data_vdl/allData.csv") #path for wl
 # allData <- fread("C:/Users/minunno/Documents/vdlData/processedData/allData.csv") #path for fm
 =======
@@ -16,6 +17,18 @@ download.file("https://www.dropbox.com/s/ngaexvxlazshb0j/allData.csv?dl=1",
               "./dropbox/allData.csv" )
 allData <- fread( "./dropbox/allData.csv" )
 unlink( "dropbox", recursive = TRUE )
+=======
+destfile <- "/Users/walterludwick/Documents/data_vdl/allData.csv" #path for wl
+# destfile <- "C:/Users/minunno/Documents/vdlData/processedData/allData.csv" #path for fm
+
+if(file.exists(destfile)){
+  allData <-  fread(destfile)
+}else{
+  #### read file from DropBox
+  allData <- fread( "https://www.dropbox.com/s/ngaexvxlazshb0j/allData.csv?dl=1")
+}
+
+>>>>>>> 40d965c71f776500477d65d507294e906a70d615
 
 <<<<<<< HEAD
 >>>>>>> 5a6608e8d325f9caa78b3e79ba1e42fba73d16d5
