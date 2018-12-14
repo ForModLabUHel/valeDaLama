@@ -3,7 +3,7 @@ library(data.table)
 library(ggplot2)
 library(dplyr)
 
-destfile <- "/Users/Dropbox/sensing_mission/data_vdl/processedData/allData.csv" #path for wl
+destfile <- "/Users/walterludwick/Dropbox/sensing_mission/data_vdl/processedData/allData.csv" #path for wl
 # destfile <- "C:/Users/minunno/Documents/vdlData/processedData/allData.csv" #path for fm
 
 if(file.exists(destfile)){
