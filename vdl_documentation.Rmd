@@ -15,35 +15,15 @@ To learn more, see [Interactive Documents](http://rmarkdown.rstudio.com/authorin
 
 You can embed Shiny inputs and outputs in your document. Outputs are automatically updated whenever inputs change.  This demonstrates how a standard R plot can be made interactive by wrapping it in the Shiny `renderPlot` function. The `selectInput` and `sliderInput` functions create the input widgets used to drive the plot.
 
-```{r eruptions, echo=FALSE}
-inputPanel(
-  selectInput("n_breaks", label = "Number of bins:",
-              choices = c(10, 20, 35, 50), selected = 20),
-  
-  sliderInput("bw_adjust", label = "Bandwidth adjustment:",
-              min = 0.2, max = 2, value = 1, step = 0.2)
-)
-
-renderPlot({
-  hist(faithful$eruptions, probability = TRUE, breaks = as.numeric(input$n_breaks),
-       xlab = "Duration (minutes)", main = "Geyser eruption duration")
-  
-  dens <- density(faithful$eruptions, adjust = input$bw_adjust)
-  lines(dens, col = "blue")
-})
-```
-
-## Embedded Application
-
-It's also possible to embed an entire Shiny application within an R Markdown document using the `shinyAppDir` function. This example embeds a Shiny application located in another directory:
-
 ```{r tabsets, echo=FALSE}
+  Sys.setenv(RSTUDIO_PANDOC="/Users/walterludwick/anaconda3/bin/pandoc")
+
 library(lubridate);library(shiny)
 library(data.table)
 library(ggplot2)
 library(dplyr)
 
-destfile <- "/Users/walterludwick/Documents/data_vdl/allData.csv" #path for wl
+destfile <- "/Users/walterludwick/Dropbox/sensing_mission/data_vdl/processedData/allData.csv" #path for wl
 # destfile <- "C:/Users/minunno/Documents/vdlData/processedData/allData.csv" #path for fm
 
 if(file.exists(destfile)){
@@ -95,6 +75,9 @@ ui <- fluidPage(
     selectizeInput(inputId = "selByClass",
                    label = "select sensors by class", 
                    choices = unique(selTab$CLASS), multiple = TRUE),
+    selectInput(inputId = "selSens",
+                label = "",
+                choices = c("or","and")),
     selectizeInput(inputId = "selByVdl",
                    label = "select sensors by vdl_id", 
                    choices = unique(selTab$VDL_ID), multiple = TRUE),
@@ -135,6 +118,8 @@ server <- function(input, output,session) {
     # siteSel <- input$dataset
     if(is.null(input$selByVdl) & is.null(input$selByClass)){
       sites <- unique(allData$longName)
+    }else if(input$selSens == "and"){
+      sites <- intersect(siteVdl,siteClass)
     }else{
       sites <- unique(c(siteVdl,siteClass))
     }
@@ -188,13 +173,9 @@ server <- function(input, output,session) {
 
 # Create Shiny app ----
 shinyApp(ui = ui, server = server)
+
 ```
 
-Note the use of the `height` parameter to determine how much vertical space the embedded application should occupy.
+## Embedded Application
 
-You can also use the `shinyApp` function to define an application inline rather then in an external directory.
-
-In all of R code chunks above the `echo = FALSE` attribute is used. This is to prevent the R code within the chunk from rendering in the document alongside the Shiny components.
-
-
-
+It's also possible to embed an entire Shiny application within an R Markdown document using the `shinyAppDir` function. This example embeds a Shiny application located in another directory:

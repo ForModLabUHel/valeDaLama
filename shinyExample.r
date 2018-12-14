@@ -1,10 +1,12 @@
+Sys.setenv(RSTUDIO_PANDOC="/Users/walterludwick/anaconda3/bin/pandoc")
+
 library(lubridate);library(shiny)
 library(data.table)
 library(ggplot2)
 library(dplyr)
 library(curl)
 
-destfile <- "/Users/walterludwick/Documents/data_vdl/allData.csv" #path for wl
+destfile <- "/Users/walterludwick/Dropbox/sensing_mission/data_vdl/processedData/allData.csv" #path for wl
 # destfile <- "C:/Users/minunno/Documents/vdlData/processedData/allData.csv" #path for fm
 
 if(file.exists(destfile)){
@@ -13,7 +15,6 @@ if(file.exists(destfile)){
   #### read file from DropBox
   allData <- fread( "https://www.dropbox.com/s/ngaexvxlazshb0j/allData.csv?dl=1")
 }
-
 
 # load("data/consistData.rdata") ##read data for which fp_id and serial number are consistent
 # allData <- allData[serial_number %in% consistData] ##select data for which fp_id and serial number are consistent
@@ -57,6 +58,9 @@ ui <- fluidPage(
     selectizeInput(inputId = "selByClass",
                    label = "select sensors by class", 
                    choices = unique(selTab$CLASS), multiple = TRUE),
+    selectInput(inputId = "selSens",
+                label = "",
+                choices = c("or","and")),
     selectizeInput(inputId = "selByVdl",
                    label = "select sensors by vdl_id", 
                    choices = unique(selTab$VDL_ID), multiple = TRUE),
@@ -97,6 +101,8 @@ server <- function(input, output,session) {
     # siteSel <- input$dataset
     if(is.null(input$selByVdl) & is.null(input$selByClass)){
       sites <- unique(allData$longName)
+    }else if(input$selSens == "and"){
+      sites <- intersect(siteVdl,siteClass)
     }else{
       sites <- unique(c(siteVdl,siteClass))
     }
