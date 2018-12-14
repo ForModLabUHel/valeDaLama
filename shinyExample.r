@@ -57,6 +57,9 @@ ui <- fluidPage(
     selectizeInput(inputId = "selByClass",
                    label = "select sensors by class", 
                    choices = unique(selTab$CLASS), multiple = TRUE),
+    selectInput(inputId = "selSens",
+                label = "",
+                choices = c("or","and")),
     selectizeInput(inputId = "selByVdl",
                    label = "select sensors by vdl_id", 
                    choices = unique(selTab$VDL_ID), multiple = TRUE),
@@ -97,6 +100,8 @@ server <- function(input, output,session) {
     # siteSel <- input$dataset
     if(is.null(input$selByVdl) & is.null(input$selByClass)){
       sites <- unique(allData$longName)
+    }else if(input$selSens == "and"){
+      sites <- intersect(siteVdl,siteClass)
     }else{
       sites <- unique(c(siteVdl,siteClass))
     }

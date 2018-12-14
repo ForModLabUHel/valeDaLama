@@ -16,12 +16,14 @@ To learn more, see [Interactive Documents](http://rmarkdown.rstudio.com/authorin
 You can embed Shiny inputs and outputs in your document. Outputs are automatically updated whenever inputs change.  This demonstrates how a standard R plot can be made interactive by wrapping it in the Shiny `renderPlot` function. The `selectInput` and `sliderInput` functions create the input widgets used to drive the plot.
 
 ```{r tabsets, echo=FALSE}
+  Sys.setenv(RSTUDIO_PANDOC="/Users/walterludwick/anaconda3/bin/pandoc")
+
 library(lubridate);library(shiny)
 library(data.table)
 library(ggplot2)
 library(dplyr)
 
-destfile <- "/Users/walterludwick/Documents/data_vdl/allData.csv" #path for wl
+destfile <- "/Users/walterludwick/Dropbox/sensing_mission/data_vdl/processedData/allData.csv" #path for wl
 # destfile <- "C:/Users/minunno/Documents/vdlData/processedData/allData.csv" #path for fm
 
 if(file.exists(destfile)){
@@ -73,6 +75,9 @@ ui <- fluidPage(
     selectizeInput(inputId = "selByClass",
                    label = "select sensors by class", 
                    choices = unique(selTab$CLASS), multiple = TRUE),
+    selectInput(inputId = "selSens",
+                label = "",
+                choices = c("or","and")),
     selectizeInput(inputId = "selByVdl",
                    label = "select sensors by vdl_id", 
                    choices = unique(selTab$VDL_ID), multiple = TRUE),
@@ -113,6 +118,8 @@ server <- function(input, output,session) {
     # siteSel <- input$dataset
     if(is.null(input$selByVdl) & is.null(input$selByClass)){
       sites <- unique(allData$longName)
+    }else if(input$selSens == "and"){
+      sites <- intersect(siteVdl,siteClass)
     }else{
       sites <- unique(c(siteVdl,siteClass))
     }
@@ -166,6 +173,7 @@ server <- function(input, output,session) {
 
 # Create Shiny app ----
 shinyApp(ui = ui, server = server)
+
 ```
 
 ## Embedded Application
