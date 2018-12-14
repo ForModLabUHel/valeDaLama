@@ -5,6 +5,7 @@ library(data.table)
 library(ggplot2)
 library(dplyr)
 
+<<<<<<< HEAD
 allData <- fread("/Users/walterludwick/Documents/data_vdl/allData.csv") #path for wl
 # allData <- fread("C:/Users/minunno/Documents/vdlData/processedData/allData.csv") #path for fm
 # allData <- fread("/Users/walterludwick/Documents/data_vdl/allData.csv") #path for wl
@@ -17,6 +18,9 @@ download.file("https://www.dropbox.com/s/ngaexvxlazshb0j/allData.csv?dl=1",
 allData <- fread( "./dropbox/allData.csv" )
 unlink( "dropbox", recursive = TRUE )
 destfile <- "/Users/walterludwick/Documents/data_vdl/allData.csv" #path for wl
+=======
+destfile <- "/Users/walterludwick/Dropbox/sensing_mission/data_vdl/processedData/allData.csv" #path for wl
+>>>>>>> 2d90217f51df1bd7c1a965360631d543f10e624f
 # destfile <- "C:/Users/minunno/Documents/vdlData/processedData/allData.csv" #path for fm
 
 if(file.exists(destfile)){
