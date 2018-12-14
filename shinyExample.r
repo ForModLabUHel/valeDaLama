@@ -2,6 +2,7 @@ library(lubridate);library(shiny)
 library(data.table)
 library(ggplot2)
 library(dplyr)
+library(curl)
 
 destfile <- "/Users/walterludwick/Documents/data_vdl/allData.csv" #path for wl
 # destfile <- "C:/Users/minunno/Documents/vdlData/processedData/allData.csv" #path for fm

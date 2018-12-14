@@ -1,0 +1,13 @@
+name: valeDaLama
+title: valeDaLama
+username:
+account: growvdl
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 616939
+bundleId: 1763823
+url: https://growvdl.shinyapps.io/valedalama/
+when: 1544814007.9388
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: AnalysingSSSMinR.ipynb|dailyMaps.R|dataSelection.r|inProg.r|plots&maps_utils.R|procData.r|README.md|utilis.r|vdl_documentation.Rmd|.ipynb_checkpoints/AnalysingSSSMinR-checkpoint.ipynb|.ipynb_checkpoints/procData-checkpoint.r|.ipynb_checkpoints/valeDaLama-checkpoint.Rproj|data
