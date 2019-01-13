@@ -3,7 +3,7 @@ library(data.table)
 
 ancData <- fread("data/ancData.txt")
 
-allData <- fread("C:/Users/minunno/Documents/vdlData/processedData/allData.csv")
+# allData <- fread("C:/Users/minunno/Documents/vdlData/processedData/allData.csv")
 allData$dates <- as.POSIXct(allData$dates)
 date1 <- as.Date("2018-10-01")
 date2 <- as.Date("2018-10-24")
