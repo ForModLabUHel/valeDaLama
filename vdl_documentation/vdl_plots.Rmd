@@ -1,5 +1,11 @@
 ---
 output: html_document
+resource_files:
+- allData.rdata
+- selTab.csv
+- boxplots.r
+- plots.r
+- violins.r
 runtime: shiny
 ---
 ```{r echo=FALSE,message=FALSE,warning=FALSE}
@@ -14,6 +20,8 @@ load("allData.rdata")
 allData$dSM <- NA
 selTab <- fread("selTab.csv")
 read_chunk('plots.r')
+read_chunk('violins.r')
+read_chunk('boxplots.r')
 ```
 
 ---
@@ -43,3 +51,23 @@ It's also possible to embed an entire Shiny application within an R Markdown doc
 ```{r first,echo=FALSE,message=FALSE,warning=FALSE}
 <<plots>>
 ```
+
+
+## Embedded Application
+write something here to describe violins plots
+
+# creates violin plots
+```{r second,echo=FALSE,message=FALSE,warning=FALSE}
+<<violin>>
+```
+
+
+## Embedded Application
+
+write something here to describe boxplots
+
+# create boxplots
+```{r third,echo=FALSE,message=FALSE,warning=FALSE}
+<<boxplots>>
+```
+
