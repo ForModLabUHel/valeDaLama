@@ -6,11 +6,6 @@ resource_files:
 - boxplots.r
 - plots.r
 - violins.r
-- boxplots.r
-- plots.r
-- violins.r
-- allData.rdata
-- selTab.csv
 runtime: shiny
 ---
 ```{r echo=FALSE,message=FALSE,warning=FALSE}
@@ -31,7 +26,7 @@ read_chunk('boxplots.r')
 
 ---
 title: "Soil Sensor Data Visualisation"
-author: "by Walt Ludwick & Francesco Checcomi"
+author: "by Francesco Checcomi and Walt Ludwick"
 date: "January 11, 2019"
 output: html_document
 runtime: shiny
