@@ -26,7 +26,7 @@ read_chunk('boxplots.r')
 
 ---
 title: "Soil Sensor Data Visualisation"
-author: "by Francesco Checcomi and Walt Ludwick"
+author: "by Walt Ludwick and Francesco Checcomi"
 date: "January 11, 2019"
 output: html_document
 runtime: shiny
