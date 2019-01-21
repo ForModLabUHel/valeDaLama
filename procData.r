@@ -1,4 +1,5 @@
 library(lubridate)
+library(curl)
 library(stringr)
 library(data.table)
 library(dplyr)
@@ -128,3 +129,18 @@ dir.create(foldName)
 file.copy(paste0(folderNewData,files), 
           paste0(foldName,"/"), recursive=TRUE)
 unlink(paste0(folderNewData,files), recursive=TRUE)
+
+
+
+
+####update data for shiny app
+allData$dates <- as.POSIXct(allData$dates)
+allData$longName[which(allData$longName=="07AA SS58")] <- "07AA SS58 GRID"
+nameIDs <- matrix(unlist(strsplit(allData$longName," ")),nrow(allData),3,byrow = T)
+reordNames <- paste(nameIDs[,2],nameIDs[,3],nameIDs[,1])
+allData$longName <- reordNames
+
+resumeTab$last_soilMes <- as.POSIXct(resumeTab$last_soilMes)
+allData <- merge(allData,qualityCheck[,c(1,3)])
+
+save(allData,file=paste0(path,"processedData/allData.rdata"))
