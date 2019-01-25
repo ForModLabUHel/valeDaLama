@@ -141,6 +141,6 @@ reordNames <- paste(nameIDs[,2],nameIDs[,3],nameIDs[,1])
 allData$longName <- reordNames
 
 resumeTab$last_soilMes <- as.POSIXct(resumeTab$last_soilMes)
-allData <- merge(allData,qualityCheck[,c(1,3)])
+allData <- merge(allData,resumeTab[,c(1,3)])
 
 save(allData,file=paste0(path,"processedData/allData.rdata"))
