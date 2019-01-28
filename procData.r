@@ -6,11 +6,11 @@ library(dplyr)
 # source("utils.r")
 
 path <- "/Users/walterludwick/Dropbox/sensing_mission/data_vdl/" #wl
-# path <- "C:/Users/minunno/Documents/vdlData/" #fm
+# path <- "data_vdl/" #fm
 folderNewData <- paste0(path,"newDataCollection/")
 newData <- data.table()
 files <- list.files(path= folderNewData,pattern = "\\.csv$", recursive = TRUE)
-fieldNames <- c("id","capture_datetime_utc","fertilizer_level","light","soil_moisture_percent","air_temperature_celsius","dates","LAT","LON","longName")
+fieldNames <- c("id","capture_datetime_utc","fertilizer_level","light","soil_moisture_percent","air_temperature_celsius","dates","LAT","LON")
 
 for(i in 1:length(files)){
   dataX <- fread(paste0(folderNewData,files[i]))
@@ -24,6 +24,11 @@ for(i in 1:length(files)){
 
 ###read ancilary data
 ancData <- fread("data/ancData.txt")
+ancData[which(ancData[,1]=="07AA"),3] <- "GRID"
+ancData[, longName:= do.call(paste,.SD), .SDcols=c(2,3,1)]
+namesAncData <- names(ancData); namesAncData[1] <- "id"
+setnames(ancData,namesAncData)
+# ancData <- fread("data_vdl/ancData.txt")
 # newData[id=="57E5",id:= ancData$FP_ID[21]]
 ### and take IDs that are in common 
 sitesX <- intersect(ancData$FP_ID,newData$id)
@@ -36,7 +41,8 @@ dataX <- newData[which(newData$id %in% sitesX)]
 dataX$dates <-as.POSIXct(dataX$capture_datetime_utc)
 ###round dates at 15 minutes
 dataX$dates <- round_date(dataX$dates,"15 minutes")
-ancDataX[, longName:= do.call(paste,.SD), .SDcols=-c(4:9)]
+# ancDataX[, longName:= do.call(paste,.SD), .SDcols=-c(4:9)]
+# ancDataX[, longName:= do.call(paste,.SD), .SDcols=c(2,3,1)]
 
 ###merge dataX and coordinates
 setkey(dataX,"id")
@@ -46,8 +52,8 @@ dataX <- merge(dataX,ancDataX[,c(1,4,5,10)],by="id")
 # datesAll <- as.data.table(datesAll)
 # setnames(datesAll,"dates")
 # dataX$dates <- as.character(dataX$capture_datetime_utc)
+
 # dataX$dates <- as.character(dataX$dates)
-dataX$dates <- as.character(dataX$dates)
 
 ###If running for the firt time
 # fwrite(dataX,paste0(path,"processedData/allData.csv"))
@@ -55,13 +61,14 @@ dataX$dates <- as.character(dataX$dates)
 # dataX[,..fieldNames]
 ####merge two readings and remove duplicates
 oldData <- fread(paste0(path,"processedData/allData.csv"))
+oldData$dates <-as.POSIXct(oldData$dates)
 allData <- rbind(oldData[,..fieldNames], dataX[,..fieldNames])
 allData <- setkey(allData, NULL)
 allData <- unique(allData)
 
 
 ###Quality report
-allData$dates <-as.POSIXct(allData$dates)
+# allData$dates <-as.POSIXct(allData$dates)
 datesAll <- seq.POSIXt(min(allData$dates), max(allData$dates), by = "15 min")
 datesAll <- as.data.table(datesAll); setnames(datesAll,"dates")
 setkey(allData,"dates");setkey(datesAll,"dates")
@@ -88,13 +95,7 @@ for(i in unique(allData$id)){
 } 
 
 
-##write the new allData files
-allData$dates <- as.character(allData$dates)
-fwrite(allData,paste0(path,"processedData/allData.csv"))
-fwrite(resumeTab,paste0(path,"processedData/qualCheck.csv"))
-# 
-# 
-# 
+
 # ##compute daily mean
 dailyData <- data.table()
 for(i in unique(allData$id)){
@@ -134,13 +135,21 @@ unlink(paste0(folderNewData,files), recursive=TRUE)
 
 
 ####update data for shiny app
-allData$dates <- as.POSIXct(allData$dates)
-allData$longName[which(allData$longName=="07AA SS58")] <- "07AA SS58 GRID"
-nameIDs <- matrix(unlist(strsplit(allData$longName," ")),nrow(allData),3,byrow = T)
-reordNames <- paste(nameIDs[,2],nameIDs[,3],nameIDs[,1])
-allData$longName <- reordNames
+# allData$dates <- as.POSIXct(allData$dates)
+# allData$longName[which(allData$longName=="07AA SS58")] <- "07AA SS58 GRID"
+# nameIDs <- matrix(unlist(strsplit(allData$longName," ")),nrow(allData),3,byrow = T)
+# reordNames <- paste(nameIDs[,2],nameIDs[,3],nameIDs[,1])
+# allData$longName <- reordNames
 
-resumeTab$last_soilMes <- as.POSIXct(resumeTab$last_soilMes)
+# resumeTab$last_soilMes <- as.POSIXct(resumeTab$last_soilMes)
+setkey(allData,"id")
 allData <- merge(allData,resumeTab[,c(1,3)])
+allData <- merge(allData,ancData[,c(1,10)])
 
+
+##write the new allData files
 save(allData,file=paste0(path,"processedData/allData.rdata"))
+allData$dates <- as.character(allData$dates)
+resumeTab$last_soilMes <- as.character(resumeTab$last_soilMes)
+fwrite(allData,paste0(path,"processedData/allData.csv"))
+fwrite(resumeTab,paste0(path,"processedData/qualCheck.csv"))
