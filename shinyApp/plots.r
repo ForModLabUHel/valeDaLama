@@ -29,15 +29,15 @@ ui <- fluidPage(
       
       selectInput(inputId = "startdate",
                   label = "Choose starting date:",
-                  choices = unique(ceiling_date(allData$dates, "day"))),
+                  choices = sort(unique(floor_date(allData$dates, "day")))),
       selectInput(inputId = "enddate",
                   label = "Choose end date:",
-                  choices = unique(ceiling_date(allData$dates, "day")),
+                  choices = sort(unique(ceiling_date(allData$dates, "day"))),
                   selected = max(unique(ceiling_date(allData$dates, "day")))),
       selectInput(inputId = "lastMeas",
                   label = "Choose sensors according to last measurements date:",
-                  choices = sort(unique(ceiling_date(allData$last_soilMes, "day"))),
-                  selected = max(unique(ceiling_date(allData$dates, "day")))),
+                  choices = sort(unique(floor_date(allData$last_soilMes, "day"))),
+                  selected = max(unique(floor_date(allData$last_soilMes, "day")))),
       selectizeInput(inputId = "selByClass",
                      label = "select sensors by class", 
                      choices = unique(selTab$CLASS), multiple = TRUE),
@@ -67,7 +67,7 @@ server <- function(input, output,session) {
   
   
   observe({
-    subData <- allData[last_soilMes >= input$lastMeas]
+    subData <<- allData[last_soilMes >= input$lastMeas]
     siteVdl <- selTab$longName[selTab$VDL_ID %in% input$selByVdl]
     siteClass <- selTab$longName[selTab$CLASS %in% input$selByClass]
     # siteSel <- input$dataset
@@ -81,16 +81,16 @@ server <- function(input, output,session) {
     sites <- intersect(sites,unique(subData$longName))
     nSites <<- length(sites)
     updateCheckboxGroupInput(session, "dataset",
-                             label = "Choose a sensor:",
+                             label = "Choose sensors:",
                              choices = sort(sites))
   })
   output$distPlot <- renderPlot({
     
     
     sites <- input$dataset
-    subData <- allData[last_soilMes >= input$lastMeas]
+    #subData <- allData[last_soilMes >= input$lastMeas]
     subData <- subData[dates %between% c(input$startdate, input$enddate)]
-    subData    <- subData[longName %in% sites]
+    subData <- subData[longName %in% sites]
     if(nrow(subData)>1) subData[,dates:=cut(subData$dates, breaks=input$timestep)]
     subData <- subData[, lapply(.SD, mean, na.rm=TRUE), by=list(longName,dates),
                        .SDcols=c("light","soil_moisture_percent", "air_temperature_celsius") ]
