@@ -74,7 +74,7 @@ serverBoxP <- function(input, output,session) {
     sites <- c("all sensors",intersect(sites,unique(subData$longName)))
     nSites <<- length(sites)-1
     updateCheckboxGroupInput(session, "dataset",
-                             label = "Choose a sensor:",
+                             label = "Choose sensors:",
                              choices = sort(sites),
                              selected = "all sensors")
   })

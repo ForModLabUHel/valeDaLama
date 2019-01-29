@@ -42,7 +42,7 @@ uiViolin <- fluidPage(
       selectizeInput(inputId = "selByVdl",
                      label = "select sensors by vdl_id",
                      choices = unique(selTab$VDL_ID), multiple = TRUE),
-      checkboxGroupInput(inputId = "dataset", label = "Choose a sensor:",
+      checkboxGroupInput(inputId = "dataset", label = "Choose sensors:",
                          choices=c("all sensors",unique(allData$longName)),
                          selected = NULL, inline = FALSE)
     ),
