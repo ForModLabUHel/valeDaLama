@@ -24,10 +24,10 @@ uiViolin <- fluidPage(
 
       selectInput(inputId = "startdate",
                   label = "Choose starting date:",
-                  choices = unique(floor_date(allData$dates, "day"))),
+                  choices = sort(unique(floor_date(allData$dates, "day")))),
       selectInput(inputId = "enddate",
                   label = "Choose end date:",
-                  choices = unique(ceiling_date(allData$dates, "day")),
+                  choices = sort(unique(ceiling_date(allData$dates, "day"))),
                   selected = max(unique(ceiling_date(allData$dates, "day")))),
       selectInput(inputId = "lastMeas",
                   label = "Choose sensors according to last measurements date:",
