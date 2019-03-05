@@ -31,10 +31,10 @@ setnames(ancData,namesAncData)
 # ancData <- fread("data_vdl/ancData.txt")
 # newData[id=="57E5",id:= ancData$FP_ID[21]]
 ### and take IDs that are in common 
-sitesX <- intersect(ancData$FP_ID,newData$id)
+sitesX <- intersect(ancData$id,newData$id)
 
 ###consider only sites that are in common (siteX)
-ancDataX <- ancData[which(ancData$FP_ID %in% sitesX)]
+ancDataX <- ancData[which(ancData$id %in% sitesX)]
 dataX <- newData[which(newData$id %in% sitesX)]
 
 ###transform date and time data into posix class object
