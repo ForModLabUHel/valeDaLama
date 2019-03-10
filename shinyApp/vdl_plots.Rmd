@@ -54,13 +54,10 @@ The classic view of data distribution, divided into quartiles.  The line in midd
 
 Allows you to view distribution of data selected, much like the boxplot above, only with the added nuance of kernel density, or frequency of datapoints as they are distributed up and down the scale of values selected.
 
-_(withheld from display to make page load lighter -just until we get more bandwidth on the server :-)_
-
-<!-- ## creates violin plots
+## creates violin plots
 ```{r second,echo=FALSE,message=FALSE,warning=FALSE}
 <<violin>>
 ```
--->
 
 ## Embedded applet: Line Graph Plot
 
