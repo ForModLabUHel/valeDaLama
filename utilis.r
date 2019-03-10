@@ -19,7 +19,6 @@ library(lubridate)
 library(raster)
 library(rasterVis)
 
-
 library(rsconnect)
-rsconnect::deployApp( "/Users/walterludwick/Documents/GitHub/valeDaLama/")
+# rsconnect::deployApp( "/Users/walterludwick/Documents/GitHub/valeDaLama/")
 
