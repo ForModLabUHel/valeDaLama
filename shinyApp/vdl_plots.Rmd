@@ -16,7 +16,9 @@ library(ggplot2)
 library(dplyr)
 library(curl)
 
-load("allData.rdata")
+load("~/Dropbox/sensing_mission/data_vdl/processedData/allData.rdata")
+# load("C:/Users/minunno/Documents/walt/grow_vdl/data_vdl/processedData/allData.rdata")
+
 allData$dSM <- NA
 selTab <- fread("selTab.csv")
 read_chunk('plots.r')

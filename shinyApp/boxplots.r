@@ -27,7 +27,7 @@ uiBoxP <- fluidPage(
                   choices = sort(unique(floor_date(allData$dates, "day")))),
       selectInput(inputId = "enddate",
                   label = "Choose end date:",
-                  choices = sort(unique(ceiling_date(allData$dates, "day"))),
+                  choices = sort(unique(ceiling_date(allData$dates, "day")),decreasing = T),
                   selected = max(unique(ceiling_date(allData$dates, "day")))),
       selectInput(inputId = "lastMeas",
                   label = "Choose sensors according to last measurements date:",
