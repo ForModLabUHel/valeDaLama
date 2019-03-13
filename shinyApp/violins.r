@@ -98,13 +98,15 @@ serverViolin <- function(input, output,session) {
         xlab("") + ylab("") +
         geom_violin(draw_quantiles = c(0.25,0.5,0.75)) +
         theme(axis.text.x = element_text(angle = 90, hjust = 1))
-      p1 + geom_violin(data=subData[longName %in% sites],
+      plot1 <- p1 + geom_violin(data=subData[longName %in% sites],
                         aes_string(x = "longName", y = input$variable,group="longName",
                                    color="longName", shape="longName"),draw_quantiles = c(0.25,0.5,0.75)) +
         scale_shape_manual(values=1:nlevels(subData$longName)) +
         theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
         labs(caption = paste(selSites, "of",
                              nSites, "available sensors"))
+      subCoord <- selTab[which(selTab$longName %in% unique(subData[longName %in% sites]$longName)),.(LAT,LON)]
+      # aa=1
     }else{
       subData    <- subData[longName %in% sites]
       if(nrow(subData)>1) subData[,dates:=cut(subData$dates, breaks=input$timestep)]
@@ -116,7 +118,7 @@ serverViolin <- function(input, output,session) {
       subData$longName <- factor(subData$longName)
       # subData$dates <- as.Date(subData$dates)
 
-      ggplot(data=subData,
+      plot1 <- ggplot(data=subData,
              aes_string(x = "longName", y = input$variable,group="longName",color="longName", shape="longName")) +
         scale_shape_manual(values=1:nlevels(subData$longName)) +
         xlab("") +
@@ -124,9 +126,17 @@ serverViolin <- function(input, output,session) {
         geom_violin(draw_quantiles = c(0.25,0.5,0.75)) + theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
         labs(caption = paste(selSites, "of",
                              nSites, "available sensors"))
-    }
-  })
-
+      # aa=1
+      subCoord <- selTab[which(selTab$longName %in% unique(subData$longName)),.(LAT,LON)]
+      }
+    
+    # subCoord <- selTab[which(selTab$longName %in% unique(subData$longName)),.(LAT,LON)]
+    
+    plot2 <- vdlMap + 
+      geom_point(data=selTab,aes(x=LON,y=LAT),color="light blue") + 
+      ylab("") +xlab("") + geom_point(data=subCoord,aes(x=LON,y=LAT),color="red",size=3)
+    grid.arrange(plot1, plot2, nrow=2)
+  },height = 800,width = 600)  
 }
 #
 #

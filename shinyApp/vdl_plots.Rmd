@@ -15,13 +15,18 @@ library(data.table)
 library(ggplot2)
 library(dplyr)
 library(curl)
+library(gridExtra)
 
 load("~/Dropbox/sensing_mission/data_vdl/processedData/allData.rdata")
-# load("C:/Users/minunno/Documents/walt/grow_vdl/data_vdl/processedData/allData.rdata")
+# load("C:/Users/minunno/Documents/data_vdl/processedData/allData.rdata")
 
 allData$dSM <- NA
 selTab <- fread("~/Dropbox/sensing_mission/data_vdl/processedData/selTab.csv")
-# selTab <- fread("C:/Users/minunno/Documents/walt/grow_vdl/data_vdl/processedData/selTab.csv")
+# selTab <- fread("C:/Users/minunno/Documents/data_vdl/processedData/selTab.csv")
+
+load("~/Dropbox/sensing_mission/data_vdl/processedData/vdlMap.rdata")
+# load("C:/Users/minunno/Documents/data_vdl/processedData/vdlMap.rdata")
+
 read_chunk('plots.r')
 read_chunk('violins.r')
 read_chunk('boxplots.r')

@@ -94,13 +94,14 @@ serverBoxP <- function(input, output,session) {
                    aes_(x = "all sensors", y = as.name(input$variable))) +
         xlab("") + ylab("") +
         geom_boxplot() + theme(axis.text.x = element_text(angle = 90, hjust = 1))
-      p1 + geom_boxplot(data=subData[longName %in% sites],
+      plot1 <- p1 + geom_boxplot(data=subData[longName %in% sites],
                         aes_string(x = "longName", y = input$variable,group="longName",
                                    color="longName", shape="longName")) +
         scale_shape_manual(values=1:nlevels(subData$longName)) +
         theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
         labs(caption = paste(selSites, "of",
                              nSites, "available sensors"))
+      subCoord <- selTab[which(selTab$longName %in% unique(subData[longName %in% sites]$longName)),.(LAT,LON)]
     }else{
       subData    <- subData[longName %in% sites]
       if(nrow(subData)>1) subData[,dates:=cut(subData$dates, breaks=input$timestep)]
@@ -112,7 +113,7 @@ serverBoxP <- function(input, output,session) {
       subData$longName <- factor(subData$longName)
       # subData$dates <- as.Date(subData$dates)
   
-      ggplot(data=subData,
+      plot1 <- ggplot(data=subData,
              aes_string(x = "longName", y = input$variable,group="longName",color="longName", shape="longName")) +
         scale_shape_manual(values=1:nlevels(subData$longName)) +
         xlab("") +
@@ -120,8 +121,14 @@ serverBoxP <- function(input, output,session) {
         geom_boxplot() + theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
         labs(caption = paste(selSites, "of",
                              nSites, "available sensors"))
+      subCoord <- selTab[which(selTab$longName %in% unique(subData$longName)),.(LAT,LON)]
     }
-  })
+  plot2 <- vdlMap + 
+    geom_point(data=selTab,aes(x=LON,y=LAT),color="light blue") + 
+    ylab("") +xlab("")+ geom_point(data=subCoord,aes(x=LON,y=LAT),color="red",size=3)
+  grid.arrange(plot1, plot2, nrow=2)
+  },height = 800,width = 600)  
+  
 
 }
 # 

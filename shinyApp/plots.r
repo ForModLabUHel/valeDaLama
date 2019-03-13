@@ -101,8 +101,8 @@ server <- function(input, output,session) {
     subData$longName <- factor(subData$longName)
     subData$dates <- as.Date(subData$dates)
     
-    ggplot(data=subData,
-           aes_string(x = input$Xaxis, y = input$Yaxis,group="longName",color="longName", shape="longName")) +
+    plot1 <- ggplot(data=subData,
+                    aes_string(x = input$Xaxis, y = input$Yaxis,group="longName",color="longName", shape="longName")) +
       scale_shape_manual(values=1:nlevels(subData$longName)) +
       xlab(input$Xaxis) +
       ylab(input$Yaxis) +
@@ -113,9 +113,18 @@ server <- function(input, output,session) {
       # geom_line()
       geom_point() +
       labs(caption = paste(length(unique(subData$longName)), "of",
-                              nSites, "available sensors"))
-  })
-  
+                           nSites, "available sensors"))
+    
+    
+    subCoord <- selTab[which(selTab$longName %in% unique(subData$longName)),.(LAT,LON)]
+    
+    plot2 <- vdlMap + 
+      geom_point(data=selTab,aes(x=LON,y=LAT),color="light blue") + 
+      geom_point(data=subCoord,aes(x=LON,y=LAT),color="red",size=3) +
+      ylab("") +xlab("")
+    
+    grid.arrange(plot1, plot2, nrow=2)
+  },height = 800,width = 600)  
 }
 
 # Create Shiny app ----
