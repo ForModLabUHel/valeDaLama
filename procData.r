@@ -61,6 +61,8 @@ dataX <- merge(dataX,ancDataX[,.(id,LAT,LON,vdlName)],by="id")
 # dataX[,..fieldNames]
 ####merge two readings and remove duplicates
 oldData <- fread(paste0(path,"processedData/allData.csv"))
+oldData$vdlName <- sub("^(\\S*\\s+\\S+).*", "\\1", oldData$longName)
+
 oldData$dates <-as.POSIXct(oldData$dates)
 allData <- rbind(oldData[,..fieldNames], dataX[,..fieldNames])
 allData <- setkey(allData, NULL)
@@ -144,7 +146,7 @@ unlink(paste0(folderNewData,files), recursive=TRUE)
 # resumeTab$last_soilMes <- as.POSIXct(resumeTab$last_soilMes)
 setkey(allData,"id")
 allData <- merge(allData,resumeTab[,c(1,3)])
-allData <- merge(allData,ancData[,c(1,10)])
+allData <- merge(allData,ancData[,.(id,vdlName)])
 
 
 ##write the new allData files
