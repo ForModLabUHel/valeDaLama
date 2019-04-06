@@ -24,8 +24,8 @@ for(i in 1:length(files)){
 
 ###read ancilary data
 ancData <- fread("data/ancData.txt")
-ancData[which(ancData[,1]=="07AA"),3] <- "GRID"
-ancData[, longName:= do.call(paste,.SD), .SDcols=c(2,3,1)]
+# ancData[which(ancData[,1]=="07AA"),3] <- "GRID"
+ancData[, vdlName:= do.call(paste,.SD), .SDcols=c(2,3)]
 namesAncData <- names(ancData); namesAncData[1] <- "id"
 setnames(ancData,namesAncData)
 # ancData <- fread("data_vdl/ancData.txt")
@@ -48,7 +48,7 @@ dataX$dates <- round_date(dataX$dates,"15 minutes")
 setkey(dataX,"id")
 names(ancDataX)[1] <- 'id'
 setkey(ancDataX,"id")
-dataX <- merge(dataX,ancDataX[,c(1,4,5,10)],by="id")
+dataX <- merge(dataX,ancDataX[,.(id,LAT,LON,vdlName)],by="id")
 # datesAll <- as.data.table(datesAll)
 # setnames(datesAll,"dates")
 # dataX$dates <- as.character(dataX$capture_datetime_utc)
