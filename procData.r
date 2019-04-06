@@ -38,7 +38,7 @@ ancDataX <- ancData[which(ancData$id %in% sitesX)]
 dataX <- newData[which(newData$id %in% sitesX)]
 
 ###transform date and time data into posix class object
-dataX$dates <-as.POSIXct(dataX$capture_datetime_utc)
+dataX$dates <-as.POSIXct(dataX$capture_datetime_utc, format="%Y-%m-%d %H:%M:%S",tz="GMT")
 ###round dates at 15 minutes
 dataX$dates <- round_date(dataX$dates,"15 minutes")
 # ancDataX[, longName:= do.call(paste,.SD), .SDcols=-c(4:9)]
@@ -60,10 +60,14 @@ dataX <- merge(dataX,ancDataX[,.(id,LAT,LON,vdlName)],by="id")
 
 # dataX[,..fieldNames]
 ####merge two readings and remove duplicates
-oldData <- fread(paste0(path,"processedData/allData.csv"))
-oldData$vdlName <- sub("^(\\S*\\s+\\S+).*", "\\1", oldData$longName)
+load(paste0(path,"processedData/allData.rdata"))
+oldData <- allData
+# oldData <- fread(paste0(path,"processedData/allData.csv"))
+# oldData$vdlName <- sub("^(\\S*\\s+\\S+).*", "\\1", oldData$longName)
 
-oldData$dates <-as.POSIXct(oldData$dates)
+# oldData$dates <-as.POSIXct(oldData$capture_datetime_utc, format="%Y-%m-%d %H:%M:%S",tz="Europe/London")
+# oldData$dates <- round_date(oldData$dates,"15 minutes")
+
 allData <- rbind(oldData[,..fieldNames], dataX[,..fieldNames])
 allData <- setkey(allData, NULL)
 allData <- unique(allData)
@@ -145,7 +149,7 @@ unlink(paste0(folderNewData,files), recursive=TRUE)
 
 # resumeTab$last_soilMes <- as.POSIXct(resumeTab$last_soilMes)
 setkey(allData,"id")
-allData <- merge(allData,resumeTab[,c(1,3)])
+allData <- merge(allData,resumeTab[,c(1:3)])
 allData <- merge(allData,ancData[,.(id,vdlName)])
 
 
@@ -153,5 +157,6 @@ allData <- merge(allData,ancData[,.(id,vdlName)])
 save(allData,file=paste0(path,"processedData/allData.rdata"))
 allData$dates <- as.character(allData$dates)
 resumeTab$last_soilMes <- as.character(resumeTab$last_soilMes)
+resumeTab$first_soilMes <- as.character(resumeTab$first_soilMes)
 fwrite(allData,paste0(path,"processedData/allData.csv"))
 fwrite(resumeTab,paste0(path,"processedData/qualCheck.csv"))

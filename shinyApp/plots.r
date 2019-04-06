@@ -37,7 +37,7 @@ ui <- fluidPage(
       selectInput(inputId = "lastMeas",
                   label = "Choose sensors according to last measurements date:",
                   choices = sort(unique(floor_date(allData$last_soilMes, "day"))),
-                  selected = max(unique(floor_date(allData$last_soilMes, "day")))),
+                  selected = min(unique(floor_date(allData$last_soilMes, "day")))),
       selectizeInput(inputId = "selByClass",
                      label = "select sensors by class", 
                      choices = unique(selTab$CLASS), multiple = TRUE),
@@ -48,7 +48,7 @@ ui <- fluidPage(
                      label = "select sensors by vdl_id", 
                      choices = unique(selTab$VDL_ID), multiple = TRUE),
       checkboxGroupInput(inputId = "dataset", label = "Choose a sensor:", 
-                         choices=unique(allData$longName),
+                         choices=unique(allData$vdlName),
                          selected = NULL, inline = FALSE)
     ),
     
@@ -68,17 +68,17 @@ server <- function(input, output,session) {
   
   observe({
     subData <<- allData[last_soilMes >= input$lastMeas]
-    siteVdl <- selTab$longName[selTab$VDL_ID %in% input$selByVdl]
-    siteClass <- selTab$longName[selTab$CLASS %in% input$selByClass]
+    siteVdl <- selTab$vdlName[selTab$VDL_ID %in% input$selByVdl]
+    siteClass <- selTab$vdlName[selTab$CLASS %in% input$selByClass]
     # siteSel <- input$dataset
     if(is.null(input$selByVdl) & is.null(input$selByClass)){
-      sites <- unique(allData$longName)
+      sites <- unique(allData$vdlName)
     }else if(input$selSens == "and"){
       sites <- intersect(siteVdl,siteClass)
     }else{
       sites <- unique(c(siteVdl,siteClass))
     }
-    sites <- intersect(sites,unique(subData$longName))
+    sites <- intersect(sites,unique(subData$vdlName))
     nSites <<- length(sites)
     updateCheckboxGroupInput(session, "dataset",
                              label = "Choose sensors:",
@@ -90,20 +90,20 @@ server <- function(input, output,session) {
     sites <- input$dataset
     #subData <- allData[last_soilMes >= input$lastMeas]
     subData <- subData[dates %between% c(input$startdate, input$enddate)]
-    subData <- subData[longName %in% sites]
+    subData <- subData[vdlName %in% sites]
     if(nrow(subData)>1) subData[,dates:=cut(subData$dates, breaks=input$timestep)]
-    subData <- subData[, lapply(.SD, mean, na.rm=TRUE), by=list(longName,dates),
+    subData <- subData[, lapply(.SD, mean, na.rm=TRUE), by=list(vdlName,dates),
                        .SDcols=c("light","soil_moisture_percent", "air_temperature_celsius") ]
-    subData <- subData %>% group_by(longName) %>%
+    subData <- subData %>% group_by(vdlName) %>%
       mutate(dSM = order_by(dates, soil_moisture_percent - lag(soil_moisture_percent)))
     
     
-    subData$longName <- factor(subData$longName)
+    subData$vdlName <- factor(subData$vdlName)
     subData$dates <- as.Date(subData$dates)
     
     plot1 <- ggplot(data=subData,
-                    aes_string(x = input$Xaxis, y = input$Yaxis,group="longName",color="longName", shape="longName")) +
-      scale_shape_manual(values=1:nlevels(subData$longName)) +
+                    aes_string(x = input$Xaxis, y = input$Yaxis,group="vdlName",color="vdlName", shape="vdlName")) +
+      scale_shape_manual(values=1:nlevels(subData$vdlName)) +
       xlab(input$Xaxis) +
       ylab(input$Yaxis) +
       # scale_x_date(labels = date_format("%m-%Y"))+
@@ -112,11 +112,11 @@ server <- function(input, output,session) {
       #                                       length.out = 5),1)) +
       # geom_line()
       geom_point() +
-      labs(caption = paste(length(unique(subData$longName)), "of",
+      labs(caption = paste(length(unique(subData$vdlName)), "of",
                            nSites, "available sensors"))
     
     
-    subCoord <- selTab[which(selTab$longName %in% unique(subData$longName)),.(LAT,LON)]
+    subCoord <- selTab[which(selTab$vdlName %in% unique(subData$vdlName)),.(LAT,LON)]
     
     plot2 <- vdlMap + 
       geom_point(data=selTab,aes(x=LON,y=LAT),color="light blue") + 
