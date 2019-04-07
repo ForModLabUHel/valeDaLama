@@ -155,8 +155,8 @@ allData <- merge(allData,ancData[,.(id,vdlName)])
 
 ##write the new allData files
 save(allData,file=paste0(path,"processedData/allData.rdata"))
-allData$dates <- as.character(allData$dates)
+# allData$dates <- as.character(allData$dates)
 resumeTab$last_soilMes <- as.character(resumeTab$last_soilMes)
 resumeTab$first_soilMes <- as.character(resumeTab$first_soilMes)
-fwrite(allData,paste0(path,"processedData/allData.csv"))
+# fwrite(allData,paste0(path,"processedData/allData.csv"))
 fwrite(resumeTab,paste0(path,"processedData/qualCheck.csv"))
