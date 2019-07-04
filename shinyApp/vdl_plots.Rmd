@@ -26,7 +26,7 @@ selTab <- fread("~/Dropbox/sensing_mission/data_vdl/processedData/selTab.csv")
 
 load("~/Dropbox/sensing_mission/data_vdl/processedData/vdlMap.rdata")
 # load("C:/Users/minunno/Documents/data_vdl/processedData/vdlMap.rdata")
-vdlMap <- map2015 #choose between map2015 and map2018
+vdlMap <- map2018 #choose between map2015 and map2018
 
 read_chunk('plots.r')
 read_chunk('violins.r')
