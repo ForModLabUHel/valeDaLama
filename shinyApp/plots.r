@@ -1,4 +1,3 @@
-
 ## @knitr plots
 # Define UI for app that draws a histogram ----
 ui <- fluidPage(
@@ -56,7 +55,8 @@ ui <- fluidPage(
     mainPanel(
       
       # Output: Histogram ----
-      plotOutput(outputId = "distPlot")
+      plotOutput(outputId = "distPlot"),
+      leafletOutput(outputId = "map")
       
     )
   )
@@ -65,7 +65,6 @@ ui <- fluidPage(
 # Define server logic required to draw a histogram ----
 server <- function(input, output,session) {
   
-  
   observe({
     subData <<- allData[last_soilMes >= input$lastMeas]
     siteVdl <- selTab$vdlName[selTab$VDL_ID %in% input$selByVdl]
@@ -73,17 +72,85 @@ server <- function(input, output,session) {
     # siteSel <- input$dataset
     if(is.null(input$selByVdl) & is.null(input$selByClass)){
       sites <- unique(allData$vdlName)
+      siteX = F; sitesSel=NULL
     }else if(input$selSens == "and"){
-      sites <- intersect(siteVdl,siteClass)
+      sites <- sitesSel <- intersect(siteVdl,siteClass)
+      siteX = T
     }else{
-      sites <- unique(c(siteVdl,siteClass))
+      sites <- sitesSel <- unique(c(siteVdl,siteClass))
+      siteX = T
     }
     sites <- intersect(sites,unique(subData$vdlName))
+    if(length(input$map_marker_click$lng)>0){
+      df <- selTab %>% filter(LON == input$map_marker_click$lng &
+                                LAT == input$map_marker_click$lat)
+      if(siteX){
+        sites <- sitesSel <- unique(c(sites,df$vdlName))
+      } else{
+        sites <- sitesSel <- df$vdlName
+      }
+    }
     nSites <<- length(sites)
     updateCheckboxGroupInput(session, "dataset",
                              label = "Choose sensors:",
-                             choices = sort(sites))
+                             choices = sort(sites),
+                             selected = sitesSel)
   })
+  
+  observe({
+    proxy <- leafletProxy("map", data = subData)
+    proxy %>% clearMarkers()
+    if (nSites>0) {
+      proxy %>% addCircleMarkers(stroke = FALSE,  fillOpacity = 0.2) #%>%
+        # addLegend("bottomright", pal = pal2, values = data$depth_type,
+        #           title = "Depth Type",
+        #           opacity = 1)}
+    }else {
+      proxy %>% clearMarkers() %>% clearControls()
+    }
+  })
+  
+  observe({
+    proxy <- leafletProxy("map", data = subData)
+    proxy %>% clearMarkers()
+    if (nSites>0) {
+      proxy %>%  addHeatmap(lng=~LON, lat=~LAT,  blur =  10, max = 0.05, radius = 15) 
+    }
+    else{
+      proxy %>% clearHeatmap()
+    }
+    
+    
+  })
+  
+  
+  
+  output$map <- renderLeaflet({
+    sites <- input$dataset
+    #subData <- allData[last_soilMes >= input$lastMeas]
+    subData <- subData[dates %between% c(input$startdate, input$enddate)]
+    subData <- subData[vdlName %in% sites]
+    if(nrow(subData)>1) subData[,dates:=cut(subData$dates, breaks=input$timestep)]
+    subData <- subData[, lapply(.SD, mean, na.rm=TRUE), by=list(vdlName,dates),
+                       .SDcols=c("light","soil_moisture_percent", "air_temperature_celsius") ]
+    subData <- subData %>% group_by(vdlName) %>%
+      mutate(dSM = order_by(dates, soil_moisture_percent - lag(soil_moisture_percent)))
+    
+    
+    subData$vdlName <- factor(subData$vdlName)
+    subData$dates <- as.Date(subData$dates)
+    subCoord <- selTab[which(selTab$vdlName %in% unique(subData$vdlName)),.(LAT,LON)]
+    
+    lmap <- leaflet() %>%
+      # setView(lat = 37.13735,lat2=37.14682, lng1=  -8.641081,lng2=-8.621029) %>%  # set map view
+      addTiles() %>%   
+      fitBounds(-8.641081, 37.13735, -8.621029, 37.14682)  %>% 
+      # addRasterImage(plotRGB(df2015)) %>%# Add default OpenStreetMap map background tiles
+      addCircleMarkers(lat = selTab$LAT, lng = selTab$LON, label=selTab$vdlName,radius = 3) %>% 
+      addCircles(lat = subCoord$LAT, lng = subCoord$LON, col=2,label=selTab$vdlName) #%>% 
+      #addMarkers(lng = selTab$LON, lat = selTab$LAT)
+  })
+  
   output$distPlot <- renderPlot({
     
     
@@ -115,16 +182,13 @@ server <- function(input, output,session) {
       labs(caption = paste(length(unique(subData$vdlName)), "of",
                            nSites, "available sensors"))
     
+    # plot2 <- vdlMap + 
+    #   geom_point(data=selTab,aes(x=LON,y=LAT),color="light blue") + 
+    #   geom_point(data=subCoord,aes(x=LON,y=LAT),color="red",size=3) +
+    #   ylab("") +xlab("")
     
-    subCoord <- selTab[which(selTab$vdlName %in% unique(subData$vdlName)),.(LAT,LON)]
-    
-    plot2 <- vdlMap + 
-      geom_point(data=selTab,aes(x=LON,y=LAT),color="light blue") + 
-      geom_point(data=subCoord,aes(x=LON,y=LAT),color="red",size=3) +
-      ylab("") +xlab("")
-    
-    grid.arrange(plot1, plot2, nrow=2)
-  },height = 800,width = 600)  
+    print(plot1)
+  },height = 400,width = 600)  
 }
 
 # Create Shiny app ----
