@@ -7,12 +7,12 @@ library(curl)
 library(gridExtra)
 library(leaflet);library(leaflet.extras)
 
-load("~/Dropbox/sensing_mission/data_vdl/processedData/allData.rdata")
-# load("C:/Users/minunno/Documents/data_vdl/processedData/allData.rdata")
+# load("~/Dropbox/sensing_mission/data_vdl/processedData/allData.rdata")
+load("C:/Users/minunno/Documents/data_vdl/processedData/allData.rdata")
 
 allData$dSM <- NA
-selTab <- fread("~/Dropbox/sensing_mission/data_vdl/processedData/selTab.csv")
-# selTab <- fread("C:/Users/minunno/Documents/data_vdl/processedData/selTab.csv")
+# selTab <- fread("~/Dropbox/sensing_mission/data_vdl/processedData/selTab.csv")
+selTab <- fread("C:/Users/minunno/Documents/data_vdl/processedData/selTab.csv")
 
 ## @knitr plots
 # Define UI for app that draws a histogram ----
@@ -55,13 +55,19 @@ ui <- fluidPage(
                   selected = min(unique(floor_date(allData$last_soilMes, "day")))),
       selectizeInput(inputId = "selByClass",
                      label = "select sensors by class", 
-                     choices = unique(selTab$CLASS), multiple = TRUE),
+                     choices = unique(selTab$CLASS), multiple = TRUE, options = list(
+                       'plugins' = list('remove_button'),
+                       'create' = TRUE,
+                       'persist' = FALSE)),
       selectInput(inputId = "selSens",
                   label = "",
                   choices = c("or","and")),
       selectizeInput(inputId = "selByVdl",
                      label = "select sensors by vdl_id", 
-                     choices = unique(selTab$VDL_ID), multiple = TRUE),
+                     choices = unique(selTab$VDL_ID), multiple = TRUE,options = list(
+                       'plugins' = list('remove_button'),
+                       'create' = TRUE,
+                       'persist' = FALSE)),
       p(),
       actionButton("clearSel", "Clear sensors"),
       checkboxGroupInput(inputId = "dataset", label = "Choose a sensor:", 
@@ -96,6 +102,11 @@ server <- function(input, output,session) {
   
   observeEvent(input$clearSel, {
     siteClick <<- character(0)
+    sitesSel <<- character(0)
+    # input$selByVdl <<- NULL
+    # input$selByClass <<- NULL
+    updateSelectizeInput(session, 'selByVdl', selected = NULL, choices = unique(selTab$VDL_ID),server = TRUE)
+    updateSelectizeInput(session, 'selByClass', selected = NULL,choices = unique(selTab$CLASS), server = TRUE)
     updateCheckboxGroupInput(session, "dataset",
                              label = "Choose sensors:",
                              choices = sort(selTab$vdlName),
