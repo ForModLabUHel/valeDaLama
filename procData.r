@@ -152,9 +152,30 @@ setkey(allData,"id")
 allData <- merge(allData,resumeTab[,c(1:3)])
 allData <- merge(allData,ancData[,.(id,vdlName)])
 
+startDates <- sort(unique(floor_date(allData$dates, "day")))
+endDates <- sort(unique(ceiling_date(allData$dates, "day")),decreasing = T)
+maxEndDates <- max(endDates)
+lastSoilMeass <- sort(unique(floor_date(allData$last_soilMes, "day")))
+minLastSoilMeas <- min(lastSoilMeass)
+
+dailyData <- allData
+dailyData[,dateX:=cut(dailyData$dates, breaks="1 d")]
+dailyData <- dailyData[, lapply(.SD, mean, na.rm=TRUE), by=list(vdlName,dateX),
+                       .SDcols=c("light","soil_moisture_percent", "air_temperature_celsius") ]
+setkey(dailyData,dateX)
+dailyData$vdlName <- factor(dailyData$vdlName)
+allData$vdlName <- factor(allData$vdlName)
+
+dailyData[,dSM := lag(soil_moisture_percent),by=vdlName]
+dailyData[,dSM := soil_moisture_percent - dSM,by=vdlName]
+
+ops <- allData[,unique(last_soilMes),by=vdlName] 
+setnames(ops,"V1", "last_soilMes")
+dailyData <- merge(dailyData,ops,by = "vdlName",allow.cartesian = T)
+dailyData$dates <- as.Date(dailyData$dateX)
 
 ##write the new allData files
-save(allData,file=paste0(path,"processedData/allData.rdata"))
+save(dailyData,allData,startDates, endDates, maxEndDates, lastSoilMeass, minLastSoilMeas,file=paste0(path,"processedData/allData.rdata"))
 # allData$dates <- as.character(allData$dates)
 resumeTab$last_soilMes <- as.character(resumeTab$last_soilMes)
 resumeTab$first_soilMes <- as.character(resumeTab$first_soilMes)
