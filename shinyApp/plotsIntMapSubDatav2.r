@@ -9,9 +9,9 @@ library(leaflet);library(leaflet.extras)
 
 # load("~/Dropbox/sensing_mission/data_vdl/processedData/allData.rdata")
 # load("C:/Users/minunno/Documents/data_vdl/processedData/allData.rdata")
-load("allData.rdata")
+load("dailyData.rdata")
 
-allData$dSM <- NA
+# allData$dSM <- NA
 # selTab <- fread("~/Dropbox/sensing_mission/data_vdl/processedData/selTab.csv")
 # selTab <- fread("C:/Users/minunno/Documents/data_vdl/processedData/selTab.csv")
 selTab <- fread("selTab.csv")
@@ -44,7 +44,7 @@ ui <- fluidPage(
       # Input: Selector for choosing timestep ----
       selectInput(inputId = "timestep",
                   label = "Choose a timestep:",
-                  choices = c("15 min","30 min","1 h","3 h","6 h","12 h","1 d"),
+                  choices = c("1 d"),
                   selected = "1 d"),
       
       selectInput(inputId = "startdate",
@@ -54,19 +54,19 @@ ui <- fluidPage(
                   label = "Choose end date:",
                   choices = endDates,
                   selected = maxEndDates),
-      selectInput(inputId = "lastMeas",
-                  label = "Choose sensors according to last measurements date:",
-                  choices = lastSoilMeass,
-                  selected = minLastSoilMeas),
-      selectizeInput(inputId = "selByClass",
-                     label = "select sensors by class", 
-                     choices = unique(selTab$CLASS), multiple = TRUE),
-      selectInput(inputId = "selSens",
-                  label = "",
-                  choices = c("or","and")),
-      selectizeInput(inputId = "selByVdl",
-                     label = "select sensors by vdl_id", 
-                     choices = unique(selTab$VDL_ID), multiple = TRUE),
+      # selectInput(inputId = "lastMeas",
+      #             label = "Choose sensors according to last measurements date:",
+      #             choices = lastSoilMeass,
+      #             selected = minLastSoilMeas),
+      # selectizeInput(inputId = "selByClass",
+      #                label = "select sensors by class", 
+      #                choices = unique(selTab$CLASS), multiple = TRUE),
+      # selectInput(inputId = "selSens",
+      #             label = "",
+      #             choices = c("or","and")),
+      # selectizeInput(inputId = "selByVdl",
+      #                label = "select sensors by vdl_id", 
+      #                choices = unique(selTab$VDL_ID), multiple = TRUE),
       p(),
       actionButton("clearSel", "Clear sensors"),
       checkboxGroupInput(inputId = "dataset", label = "Choose a sensor:", 
@@ -96,6 +96,7 @@ lmap <- leaflet() %>%
 server <- function(input, output,session) {
   siteClick <- character(0)
   sitesSel <- character(0)
+  SiteX <- NULL
   subCoord <<-NULL
   
   output$map <- renderLeaflet(lmap)
@@ -104,11 +105,7 @@ server <- function(input, output,session) {
     subCoord <<-NULL
     siteClick <<- NULL
     siteClickNew <<-NULL
-    if(input$timestep=="1 d"){
-      subData <<- dailyData[last_soilMes >= input$lastMeas]
-    }else{
-      subData <<- allData[last_soilMes >= input$lastMeas]
-    }
+    subData <<-dailyData
     sitesSel <<- NULL
     updateCheckboxGroupInput(session, "dataset",
                              label = "Choose sensors:",
@@ -137,24 +134,20 @@ server <- function(input, output,session) {
     observeEvent(input$dataset, {
       siteClick <<- input$dataset
     })
-    if(input$timestep=="1 d"){
-      subData <<- dailyData[last_soilMes >= input$lastMeas]
-    }else{
-      subData <<- allData[last_soilMes >= input$lastMeas]
-    }
-    siteVdl <- selTab$vdlName[selTab$VDL_ID %in% input$selByVdl]
-    siteClass <- selTab$vdlName[selTab$CLASS %in% input$selByClass]
+      subData <<- dailyData#[last_soilMes >= input$lastMeas]
+    # siteVdl <- selTab$vdlName[selTab$VDL_ID %in% input$selByVdl]
+    # siteClass <- selTab$vdlName[selTab$CLASS %in% input$selByClass]
     # siteSel <- input$dataset
-    if(is.null(input$selByVdl) & is.null(input$selByClass)){
-      sites <- unique(allData$vdlName)
+    # if(is.null(input$selByVdl) & is.null(input$selByClass)){
+      sites <- unique(subData$vdlName)
       siteX = F; sitesSel <<- NULL
-    }else if(input$selSens == "and"){
-      sites <- sitesSel <<- intersect(siteVdl,siteClass)
-      siteX = T
-    }else{
-      sites <- sitesSel <<- unique(c(siteVdl,siteClass))
-      siteX = T
-    }
+    # }else if(input$selSens == "and"){
+    #   sites <- sitesSel <<- intersect(siteVdl,siteClass)
+    #   siteX = T
+    # }else{
+    #   sites <- sitesSel <<- unique(c(siteVdl,siteClass))
+    #   siteX = T
+    # }
     sites <- intersect(sites,unique(subData$vdlName))
     if(length(input$map_marker_click$lng)>0){
       df <- selTab %>% filter(LON == input$map_marker_click$lng &
@@ -172,21 +165,21 @@ server <- function(input, output,session) {
       
       # if(length(duplicated(siteClick))>0) siteClick <<- siteClick[!siteClick %in% siteClick[duplicated(siteClick)]]
       
-      if(siteX){
-        sites <- unique(c(sites,siteClick))
+      # if(siteX){
+      #   sites <- unique(c(sites,siteClick))
+      #   sitesSel <- siteClick
+      # } else{
         sitesSel <- siteClick
-      } else{
-        sitesSel <- siteClick
-      }
+      # }
     }
     nSites <<- length(sites)
     sites <<- sites
+    # siteOrd <- c(sort(sitesSel),sort(sites[! sites %in% sitesSel]))
     updateCheckboxGroupInput(session, "dataset",
                              label = "Choose sensors:",
-                             choices = sort(sites),
+                             choices = sort(sites),  #siteOrd
                              selected = sitesSel)
     
-  
     
     observeEvent(input$dataset, {
       proxy <- leafletProxy('map')
@@ -210,8 +203,7 @@ server <- function(input, output,session) {
   
   output$distPlot <- renderPlot({
     sites <- input$dataset
-    plotData <- subData
-    
+      plotData <- subData#[last_soilMes >= input$lastMeas]
     plotData <- plotData[dates %between% c(input$startdate, input$enddate)]
     plotData <- plotData[vdlName %in% sites]
     if(nrow(plotData)>1) plotData[,dates:=cut(plotData$dates, breaks=input$timestep)]
@@ -239,7 +231,7 @@ server <- function(input, output,session) {
                            nSites, "available sensors"))
     
     print(plot1)
-  },height = 400,width = 600)  
+  },height = 400,width = 800)  
 }
 
 # Create Shiny app ----
