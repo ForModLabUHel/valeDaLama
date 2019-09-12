@@ -7,14 +7,14 @@ library(curl)
 library(gridExtra)
 library(leaflet);library(leaflet.extras)
 
-# load("~/Dropbox/sensing_mission/data_vdl/processedData/allData.rdata")
+load("~/Dropbox/sensing_mission/data_vdl/processedData/allData.rdata")
 # load("C:/Users/minunno/Documents/data_vdl/processedData/allData.rdata")
-load("allData.rdata")
+# load("allData.rdata")
 
 allData$dSM <- NA
-# selTab <- fread("~/Dropbox/sensing_mission/data_vdl/processedData/selTab.csv")
+selTab <- fread("~/Dropbox/sensing_mission/data_vdl/processedData/selTab.csv")
 # selTab <- fread("C:/Users/minunno/Documents/data_vdl/processedData/selTab.csv")
-selTab <- fread("selTab.csv")
+# selTab <- fread("selTab.csv")
 
 ##to check with Walt
 selTab <- selTab[-which(duplicated(selTab$vdlName))]
@@ -94,13 +94,15 @@ lmap <- leaflet() %>%
 
 # Define server logic required to draw a histogram ----
 server <- function(input, output,session) {
-  siteClick <- character(0)
+  siteClick <- siteClickNew <- character(0)
   sitesSel <- character(0)
   subCoord <<-NULL
+  data <- reactiveValues(clickedMarker=NULL)
   
   output$map <- renderLeaflet(lmap)
   
   observeEvent(input$clearSel, {
+    data$clickedMarker <<- NULL
     subCoord <<-NULL
     siteClick <<- NULL
     siteClickNew <<-NULL
@@ -126,17 +128,60 @@ server <- function(input, output,session) {
     # updateSelectizeInput(session, 'selByVdl', selected = NULL, choices = unique(selTab$VDL_ID),server = TRUE)
     # updateSelectizeInput(session, 'selByClass', selected = NULL,choices = unique(selTab$CLASS), server = TRUE)
   })
+  observeEvent(input$dataset, {
+    
+    data$clickedMarker <<- siteClick <<- input$dataset
+    # print(siteClick)
+    # print(siteClickNew)
+    # print(input$map_marker_click$lng)
+    proxy <- leafletProxy('map')
+    if (length(input$dataset)>0){
+      subCoord = selTab[which(selTab$vdlName %in% input$dataset),.(LAT,LON,vdlName)]
+      proxy %>%
+        addTiles() %>%
+        clearMarkers() %>%
+        # clearShapes() %>%
+        addCircleMarkers(lat = selTab$LAT, lng = selTab$LON,
+                         label=selTab$vdlName,radius = 3) %>%
+        addCircleMarkers(lat = subCoord$LAT, lng = subCoord$LON,color = "red",
+                         label=subCoord$vdlName,radius = 4) %>%
+        markerOptions(interactive = TRUE, clickable = TRUE,
+                      draggable = FALSE)
+    }
+  })
   
-  # observeEvent(input$dataset, {
-  #   siteClick <<- input$dataset
+  # observeEvent(input$map_marker_click$lng, {
+  #   print(siteClick)
+  #   # print(siteClickNew)
+  #   # print(input$map_marker_click$lng)
   # })
-  
+    
+  observeEvent(input$map_marker_click,{
+    # <- input$map_marker_click
+    df <- selTab %>% filter(LON == input$map_marker_click$lng &
+                              LAT == input$map_marker_click$lat)
+    siteClickNew <- df$vdlName
+    if(any(siteClickNew %in% siteClick)){
+      data$clickedMarker <<- siteClick[!siteClick %in% siteClickNew]
+    } else{
+      data$clickedMarker <<- c(siteClick,siteClickNew)
+    }
+    if(length(data$clickedMarker)==0){
+      proxy <- leafletProxy('map')
+      proxy %>% 
+        addTiles() %>%   
+        clearMarkers() %>%
+        # clearShapes() %>%
+        addCircleMarkers(lat = selTab$LAT, lng = selTab$LON, 
+                         label=selTab$vdlName,radius = 3) %>%
+        markerOptions(interactive = TRUE, clickable = TRUE,
+                      draggable = FALSE)
+    } 
+  }
+  )
   
   observe({
     # sites <- input$dataset
-    observeEvent(input$dataset, {
-      siteClick <<- input$dataset
-    })
     if(input$timestep=="1 d"){
       subData <<- dailyData[last_soilMes >= input$lastMeas]
     }else{
@@ -156,54 +201,21 @@ server <- function(input, output,session) {
       siteX = T
     }
     sites <- intersect(sites,unique(subData$vdlName))
-    if(length(input$map_marker_click$lng)>0){
-      df <- selTab %>% filter(LON == input$map_marker_click$lng &
-                                LAT == input$map_marker_click$lat)
-      siteClickNew <<- df$vdlName
-      # print(siteClickNew)
-      # print(siteClick)
-      if(any(siteClickNew %in% siteClick)){
-        #   # print("passed")
-        siteClick <<- siteClick[!siteClick %in% siteClickNew]
-        #   print(siteClick)
-      } else{
-        siteClick <<- c(siteClick,siteClickNew)  
-      }
-      
-      # if(length(duplicated(siteClick))>0) siteClick <<- siteClick[!siteClick %in% siteClick[duplicated(siteClick)]]
-      
+    siteClick <<- data$clickedMarker
+    
       if(siteX){
         sites <- unique(c(sites,siteClick))
-        sitesSel <- siteClick
+        sitesSel <<- data$clickedMarker <<- siteClick
       } else{
-        sitesSel <- siteClick
+        sitesSel <<- data$clickedMarker <<- siteClick
       }
-    }
+    # }
     nSites <<- length(sites)
     sites <<- sites
     updateCheckboxGroupInput(session, "dataset",
                              label = "Choose sensors:",
                              choices = sort(sites),
                              selected = sitesSel)
-    
-  
-    
-    observeEvent(input$dataset, {
-      proxy <- leafletProxy('map')
-      if (length(input$dataset)>0){ 
-        subCoord = selTab[which(selTab$vdlName %in% input$dataset),.(LAT,LON,vdlName)]
-        proxy %>% 
-          addTiles() %>%   
-          clearMarkers() %>%
-          # clearShapes() %>%
-          addCircleMarkers(lat = selTab$LAT, lng = selTab$LON, 
-                           label=selTab$vdlName,radius = 3) %>%
-          addCircleMarkers(lat = subCoord$LAT, lng = subCoord$LON,color = "red",
-                           label=subCoord$vdlName,radius = 4) %>%
-          markerOptions(interactive = TRUE, clickable = TRUE,
-                        draggable = FALSE)
-      }
-    })
   })
   
   
@@ -216,7 +228,7 @@ server <- function(input, output,session) {
     plotData <- plotData[vdlName %in% sites]
     if(nrow(plotData)>1) plotData[,dates:=cut(plotData$dates, breaks=input$timestep)]
     plotData <- plotData[, lapply(.SD, mean, na.rm=TRUE), by=list(vdlName,dates),
-                       .SDcols=c("light","soil_moisture_percent", "air_temperature_celsius") ]
+                         .SDcols=c("light","soil_moisture_percent", "air_temperature_celsius") ]
     plotData <- plotData %>% group_by(vdlName) %>%
       mutate(dSM = order_by(dates, soil_moisture_percent - lag(soil_moisture_percent)))
     
