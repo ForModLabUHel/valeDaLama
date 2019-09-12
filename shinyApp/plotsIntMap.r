@@ -7,14 +7,14 @@ library(curl)
 library(gridExtra)
 library(leaflet);library(leaflet.extras)
 
-# load("~/Dropbox/sensing_mission/data_vdl/processedData/allData.rdata")
+load("~/Dropbox/sensing_mission/data_vdl/processedData/allData.rdata")
 # load("C:/Users/minunno/Documents/data_vdl/processedData/allData.rdata")
-load("allData.rdata")
+# load("allData.rdata")
 
 allData$dSM <- NA
-# selTab <- fread("~/Dropbox/sensing_mission/data_vdl/processedData/selTab.csv")
+selTab <- fread("~/Dropbox/sensing_mission/data_vdl/processedData/selTab.csv")
 # selTab <- fread("C:/Users/minunno/Documents/data_vdl/processedData/selTab.csv")
-selTab <- fread("selTab.csv")
+# selTab <- fread("selTab.csv")
 
 ##to check with Walt
 selTab <- selTab[-which(duplicated(selTab$vdlName))]
