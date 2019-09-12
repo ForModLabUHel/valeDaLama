@@ -11,13 +11,6 @@ library(leaflet);library(leaflet.extras)
 # load("C:/Users/minunno/Documents/data_vdl/processedData/allData.rdata")
 load("dailyData.rdata")
 
-# allData$dSM <- NA
-# selTab <- fread("~/Dropbox/sensing_mission/data_vdl/processedData/selTab.csv")
-# selTab <- fread("C:/Users/minunno/Documents/data_vdl/processedData/selTab.csv")
-selTab <- fread("selTab.csv")
-
-##to check with Walt
-selTab <- selTab[-which(duplicated(selTab$vdlName))]
 
 ## @knitr plots
 # Define UI for app that draws a histogram ----
@@ -60,7 +53,7 @@ ui <- fluidPage(
                   selected = minLastSoilMeas),
       selectizeInput(inputId = "selByClass",
                      label = "select sensors by class", 
-                     choices = unique(selTab$CLASS), multiple = TRUE),
+                     choices = unique(selTab$VDL_CLASS), multiple = TRUE),
       selectInput(inputId = "selSens",
                   label = "",
                   choices = c("or","and")),
@@ -188,7 +181,7 @@ server <- function(input, output,session) {
     #   subData <<- allData[last_soilMes >= input$lastMeas]
     # }
     siteVdl <- selTab$vdlName[selTab$VDL_ID %in% input$selByVdl]
-    siteClass <- selTab$vdlName[selTab$CLASS %in% input$selByClass]
+    siteClass <- selTab$vdlName[selTab$VDL_CLASS %in% input$selByClass]
     # siteSel <- input$dataset
     if(is.null(input$selByVdl) & is.null(input$selByClass)){
       sites <- unique(selTab$vdlName)

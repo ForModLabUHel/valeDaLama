@@ -5,8 +5,10 @@ library(data.table)
 library(dplyr)
 # source("utils.r")
 
+
+
 path <- "/Users/walterludwick/Dropbox/sensing_mission/data_vdl/" #wl
-# path <- "data_vdl/" #fm
+# path <- "C:/Users/minunno/Documents/data_vdl/" #fm
 folderNewData <- paste0(path,"newDataCollection/")
 newData <- data.table()
 files <- list.files(path= folderNewData,pattern = "\\.csv$", recursive = TRUE)
@@ -21,16 +23,38 @@ for(i in 1:length(files)){
 
 
 ## walt's comment
-
+#################################################################################
 ###read ancilary data
-ancData <- fread("data/ancData.txt")
-# ancData[which(ancData[,1]=="07AA"),3] <- "GRID"
-ancData[, vdlName:= do.call(paste,.SD), .SDcols=c(2,3)]
-namesAncData <- names(ancData); namesAncData[1] <- "id"
-setnames(ancData,namesAncData)
-# ancData <- fread("data_vdl/ancData.txt")
-# newData[id=="57E5",id:= ancData$FP_ID[21]]
-### and take IDs that are in common 
+###read and process ancDataAT.csv
+selTab <- fread("~/Dropbox/sensing_mission/data_vdl/processedData/ancDataAT.csv")
+# selTab <- fread("C:/Users/minunno/GitHub/valeDaLama/data/ancDataAT.csv")
+selTab$LAT <- as.numeric(substr(selTab$LAT,1,10))
+selTab$LON <- as.numeric(substr(selTab$LON,1,10))
+selTab$last_soilMes <- as.Date(selTab$last_soilMes,format = "%Y-%m-%d %H:%M:%S")
+selTab[,vdlName:=paste(VDL_ID,VDL_CLASS)]
+selTab <- selTab[vdlName != " "]
+
+##to check with Walt
+# selTab <- selTab[-which(duplicated(selTab$vdlName))] ###remove sensors with no vdlName
+dupX <- selTab$vdlName[which(duplicated(selTab$vdlName))]
+repSens <- data.table()
+for(i in 1:length(dupX)){
+  dupSes <- selTab[vdlName==dupX[i]]
+  dupSes$last_soilMes <- as.Date(dupSes$last_soilMes,format = "%Y-%m-%d %H:%M:%S")
+  repSensX <- dupSes[which.max(dupSes$last_soilMes)]
+  repSensX$FROM_DATETIME <- dupSes[which.min(dupSes$last_soilMes)]$FROM_DATETIME
+  repSensX$first_soilMes <- dupSes[which.min(dupSes$last_soilMes)]$first_soilMes
+  repSens <- rbind(repSens,repSensX)
+}
+selTab <- selTab[! vdlName %in% dupX]
+selTab <- rbind(selTab,repSens)
+
+ancData <- selTab
+selTab <- selTab[,.(vdlName,VDL_ID,VDL_CLASS,LAT,LON)]
+#################################################################################
+
+setnames(ancData,"FP_ID","id")
+
 sitesX <- intersect(ancData$id,newData$id)
 
 ###consider only sites that are in common (siteX)
@@ -175,9 +199,11 @@ dailyData <- merge(dailyData,ops,by = "vdlName",allow.cartesian = T)
 dailyData$dates <- as.Date(dailyData$dateX)
 
 ##write the new allData files
-save(dailyData,allData,startDates, endDates, maxEndDates, lastSoilMeass, minLastSoilMeas,file=paste0(path,"processedData/allData.rdata"))
+save(selTab,dailyData,allData,startDates, endDates, maxEndDates, lastSoilMeass, minLastSoilMeas,file=paste0(path,"processedData/allData.rdata"))
 # allData$dates <- as.character(allData$dates)
 resumeTab$last_soilMes <- as.character(resumeTab$last_soilMes)
 resumeTab$first_soilMes <- as.character(resumeTab$first_soilMes)
 # fwrite(allData,paste0(path,"processedData/allData.csv"))
 fwrite(resumeTab,paste0(path,"processedData/qualCheck.csv"))
+
+
