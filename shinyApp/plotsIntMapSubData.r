@@ -44,7 +44,7 @@ ui <- fluidPage(
       # Input: Selector for choosing timestep ----
       selectInput(inputId = "timestep",
                   label = "Choose a timestep:",
-                  choices = c("1 d"),
+                  choices = c("15 min","30 min","1 h","3 h","6 h","12 h","1 d"),
                   selected = "1 d"),
       
       selectInput(inputId = "startdate",
@@ -94,18 +94,23 @@ lmap <- leaflet() %>%
 
 # Define server logic required to draw a histogram ----
 server <- function(input, output,session) {
-  siteClick <- character(0)
+  siteClick <- siteClickNew <- character(0)
   sitesSel <- character(0)
-  SiteX <- NULL
   subCoord <<-NULL
+  data <- reactiveValues(clickedMarker=NULL)
   
   output$map <- renderLeaflet(lmap)
   
   observeEvent(input$clearSel, {
+    data$clickedMarker <<- NULL
     subCoord <<-NULL
     siteClick <<- NULL
     siteClickNew <<-NULL
-    subData <<-NULL
+    # if(input$timestep=="1 d"){
+      subData <<- dailyData[last_soilMes >= input$lastMeas]
+    # }else{
+    #   subData <<- allData[last_soilMes >= input$lastMeas]
+    # }
     sitesSel <<- NULL
     updateCheckboxGroupInput(session, "dataset",
                              label = "Choose sensors:",
@@ -123,23 +128,70 @@ server <- function(input, output,session) {
     # updateSelectizeInput(session, 'selByVdl', selected = NULL, choices = unique(selTab$VDL_ID),server = TRUE)
     # updateSelectizeInput(session, 'selByClass', selected = NULL,choices = unique(selTab$CLASS), server = TRUE)
   })
+  observeEvent(input$dataset, {
+    
+    data$clickedMarker <<- siteClick <<- input$dataset
+    # print(siteClick)
+    # print(siteClickNew)
+    # print(input$map_marker_click$lng)
+    proxy <- leafletProxy('map')
+    if (length(input$dataset)>0){
+      subCoord = selTab[which(selTab$vdlName %in% input$dataset),.(LAT,LON,vdlName)]
+      proxy %>%
+        addTiles() %>%
+        clearMarkers() %>%
+        # clearShapes() %>%
+        addCircleMarkers(lat = selTab$LAT, lng = selTab$LON,
+                         label=selTab$vdlName,radius = 3) %>%
+        addCircleMarkers(lat = subCoord$LAT, lng = subCoord$LON,color = "red",
+                         label=subCoord$vdlName,radius = 4) %>%
+        markerOptions(interactive = TRUE, clickable = TRUE,
+                      draggable = FALSE)
+    }
+  })
   
-  # observeEvent(input$dataset, {
-  #   siteClick <<- input$dataset
+  # observeEvent(input$map_marker_click$lng, {
+  #   print(siteClick)
+  #   # print(siteClickNew)
+  #   # print(input$map_marker_click$lng)
   # })
   
+  observeEvent(input$map_marker_click,{
+    # <- input$map_marker_click
+    df <- selTab %>% filter(LON == input$map_marker_click$lng &
+                              LAT == input$map_marker_click$lat)
+    siteClickNew <- df$vdlName
+    if(any(siteClickNew %in% siteClick)){
+      data$clickedMarker <<- siteClick[!siteClick %in% siteClickNew]
+    } else{
+      data$clickedMarker <<- c(siteClick,siteClickNew)
+    }
+    if(length(data$clickedMarker)==0){
+      proxy <- leafletProxy('map')
+      proxy %>% 
+        addTiles() %>%   
+        clearMarkers() %>%
+        # clearShapes() %>%
+        addCircleMarkers(lat = selTab$LAT, lng = selTab$LON, 
+                         label=selTab$vdlName,radius = 3) %>%
+        markerOptions(interactive = TRUE, clickable = TRUE,
+                      draggable = FALSE)
+    } 
+  }
+  )
   
   observe({
     # sites <- input$dataset
-    observeEvent(input$dataset, {
-      siteClick <<- input$dataset
-    })
-      subData <- dailyData[last_soilMes >= input$lastMeas]
+    # if(input$timestep=="1 d"){
+      subData <<- dailyData[last_soilMes >= input$lastMeas]
+    # }else{
+    #   subData <<- allData[last_soilMes >= input$lastMeas]
+    # }
     siteVdl <- selTab$vdlName[selTab$VDL_ID %in% input$selByVdl]
     siteClass <- selTab$vdlName[selTab$CLASS %in% input$selByClass]
     # siteSel <- input$dataset
     if(is.null(input$selByVdl) & is.null(input$selByClass)){
-      sites <- unique(subData$vdlName)
+      sites <- unique(selTab$vdlName)
       siteX = F; sitesSel <<- NULL
     }else if(input$selSens == "and"){
       sites <- sitesSel <<- intersect(siteVdl,siteClass)
@@ -149,75 +201,44 @@ server <- function(input, output,session) {
       siteX = T
     }
     sites <- intersect(sites,unique(subData$vdlName))
-    if(length(input$map_marker_click$lng)>0){
-      df <- selTab %>% filter(LON == input$map_marker_click$lng &
-                                LAT == input$map_marker_click$lat)
-      siteClickNew <<- df$vdlName
-      # print(siteClickNew)
-      # print(siteClick)
-      if(any(siteClickNew %in% siteClick)){
-        #   # print("passed")
-        siteClick <<- siteClick[!siteClick %in% siteClickNew]
-        #   print(siteClick)
-      } else{
-        siteClick <<- c(siteClick,siteClickNew)  
-      }
-      
-      # if(length(duplicated(siteClick))>0) siteClick <<- siteClick[!siteClick %in% siteClick[duplicated(siteClick)]]
-      
-      if(siteX){
-        sites <- unique(c(sites,siteClick))
-        sitesSel <- siteClick
-      } else{
-        sitesSel <- siteClick
-      }
+    siteClick <<- data$clickedMarker
+    
+    if(siteX){
+      sites <- unique(c(sites,siteClick))
+      sitesSel <<- data$clickedMarker <<- siteClick
+    } else{
+      sitesSel <<- data$clickedMarker <<- siteClick
     }
+    # }
     nSites <<- length(sites)
+    sites <<- sites
     updateCheckboxGroupInput(session, "dataset",
                              label = "Choose sensors:",
                              choices = sort(sites),
                              selected = sitesSel)
-    sites <<- sites
-  
-    
-    observeEvent(input$dataset, {
-      proxy <- leafletProxy('map')
-      if (length(input$dataset)>0){ 
-        subCoord = selTab[which(selTab$vdlName %in% input$dataset),.(LAT,LON,vdlName)]
-        proxy %>% 
-          addTiles() %>%   
-          clearMarkers() %>%
-          # clearShapes() %>%
-          addCircleMarkers(lat = selTab$LAT, lng = selTab$LON, 
-                           label=selTab$vdlName,radius = 3) %>%
-          addCircleMarkers(lat = subCoord$LAT, lng = subCoord$LON,color = "red",
-                           label=subCoord$vdlName,radius = 4) %>%
-          markerOptions(interactive = TRUE, clickable = TRUE,
-                        draggable = FALSE)
-      }
-    })
   })
   
   
   
   output$distPlot <- renderPlot({
     sites <- input$dataset
-      subData <- dailyData[last_soilMes >= input$lastMeas]
-    subData <- subData[dates %between% c(input$startdate, input$enddate)]
-    subData <- subData[vdlName %in% sites]
-    if(nrow(subData)>1) subData[,dates:=cut(subData$dates, breaks=input$timestep)]
-    subData <- subData[, lapply(.SD, mean, na.rm=TRUE), by=list(vdlName,dates),
-                       .SDcols=c("light","soil_moisture_percent", "air_temperature_celsius") ]
-    subData <- subData %>% group_by(vdlName) %>%
+    plotData <- subData
+    
+    plotData <- plotData[dates %between% c(input$startdate, input$enddate)]
+    plotData <- plotData[vdlName %in% sites]
+    if(nrow(plotData)>1) plotData[,dates:=cut(plotData$dates, breaks=input$timestep)]
+    plotData <- plotData[, lapply(.SD, mean, na.rm=TRUE), by=list(vdlName,dates),
+                         .SDcols=c("light","soil_moisture_percent", "air_temperature_celsius") ]
+    plotData <- plotData %>% group_by(vdlName) %>%
       mutate(dSM = order_by(dates, soil_moisture_percent - lag(soil_moisture_percent)))
     
     
-    # subData$vdlName <- factor(subData$vdlName)
-    subData$dates <- as.Date(subData$dates)
+    # plotData$vdlName <- factor(plotData$vdlName)
+    plotData$dates <- as.Date(plotData$dates)
     
-    plot1 <- ggplot(data=subData,
+    plot1 <- ggplot(data=plotData,
                     aes_string(x = input$Xaxis, y = input$Yaxis,group="vdlName",color="vdlName", shape="vdlName")) +
-      scale_shape_manual(values=1:nlevels(subData$vdlName)) +
+      scale_shape_manual(values=1:nlevels(plotData$vdlName)) +
       xlab(input$Xaxis) +
       ylab(input$Yaxis) +
       # scale_x_date(labels = date_format("%m-%Y"))+
@@ -226,11 +247,11 @@ server <- function(input, output,session) {
       #                                       length.out = 5),1)) +
       # geom_line()
       geom_point() +
-      labs(caption = paste(length(unique(subData$vdlName)), "of",
+      labs(caption = paste(length(unique(plotData$vdlName)), "of",
                            nSites, "available sensors"))
     
     print(plot1)
-  },height = 400,width = 800)  
+  },height = 400,width = 600)  
 }
 
 # Create Shiny app ----
