@@ -9,12 +9,12 @@ library(leaflet);library(leaflet.extras)
 
 # load("~/Dropbox/sensing_mission/data_vdl/processedData/allData.rdata")
 # load("C:/Users/minunno/Documents/data_vdl/processedData/allData.rdata")
-load("allData.rdata")
+load("dailyData.rdata")
 
-allData$dSM <- NA
+# allData$dSM <- NA
 # selTab <- fread("~/Dropbox/sensing_mission/data_vdl/processedData/selTab.csv")
-selTab <- fread("C:/Users/minunno/Documents/data_vdl/processedData/selTab.csv")
-# selTab <- fread("selTab.csv")
+# selTab <- fread("C:/Users/minunno/Documents/data_vdl/processedData/selTab.csv")
+selTab <- fread("selTab.csv")
 
 ##to check with Walt
 selTab <- selTab[-which(duplicated(selTab$vdlName))]
@@ -106,11 +106,11 @@ server <- function(input, output,session) {
     subCoord <<-NULL
     siteClick <<- NULL
     siteClickNew <<-NULL
-    if(input$timestep=="1 d"){
+    # if(input$timestep=="1 d"){
       subData <<- dailyData[last_soilMes >= input$lastMeas]
-    }else{
-      subData <<- allData[last_soilMes >= input$lastMeas]
-    }
+    # }else{
+    #   subData <<- allData[last_soilMes >= input$lastMeas]
+    # }
     sitesSel <<- NULL
     updateCheckboxGroupInput(session, "dataset",
                              label = "Choose sensors:",
@@ -182,16 +182,16 @@ server <- function(input, output,session) {
   
   observe({
     # sites <- input$dataset
-    if(input$timestep=="1 d"){
+    # if(input$timestep=="1 d"){
       subData <<- dailyData[last_soilMes >= input$lastMeas]
-    }else{
-      subData <<- allData[last_soilMes >= input$lastMeas]
-    }
+    # }else{
+    #   subData <<- allData[last_soilMes >= input$lastMeas]
+    # }
     siteVdl <- selTab$vdlName[selTab$VDL_ID %in% input$selByVdl]
     siteClass <- selTab$vdlName[selTab$CLASS %in% input$selByClass]
     # siteSel <- input$dataset
     if(is.null(input$selByVdl) & is.null(input$selByClass)){
-      sites <- unique(allData$vdlName)
+      sites <- unique(selTab$vdlName)
       siteX = F; sitesSel <<- NULL
     }else if(input$selSens == "and"){
       sites <- sitesSel <<- intersect(siteVdl,siteClass)
