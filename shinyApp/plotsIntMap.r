@@ -10,6 +10,7 @@ library(leaflet);library(leaflet.extras)
 load("~/Dropbox/sensing_mission/data_vdl/processedData/allData.rdata")
 # load("C:/Users/minunno/Documents/data_vdl/processedData/allData.rdata")
 # load("allData.rdata")
+selTab[,VDL_ZONE:=substr(vdlName,1,2)]
 
 allData$dSM <- NA
 
@@ -59,6 +60,9 @@ ui <- fluidPage(
       selectInput(inputId = "selSens",
                   label = "",
                   choices = c("or","and")),
+      selectizeInput(inputId = "selByZone",
+                     label = "select sensors by zone", 
+                     choices = sort(unique(selTab$VDL_ZONE)), multiple = TRUE),
       selectizeInput(inputId = "selByVdl",
                      label = "select sensors by vdl_id", 
                      choices = sort(unique(selTab$VDL_ID)), multiple = TRUE),
@@ -184,15 +188,16 @@ server <- function(input, output,session) {
     }
     siteVdl <- selTab$vdlName[selTab$VDL_ID %in% input$selByVdl]
     siteClass <- selTab$vdlName[selTab$VDL_CLASS %in% input$selByClass]
+    siteZone <- selTab$vdlName[selTab$VDL_ZONE %in% input$selByZone]
     # siteSel <- input$dataset
-    if(is.null(input$selByVdl) & is.null(input$selByClass)){
+    if(is.null(input$selByVdl) & is.null(input$selByClass) & is.null(input$selByZone)){
       sites <- unique(allData$vdlName)
       siteX = F; sitesSel <<- NULL
     }else if(input$selSens == "and"){
-      sites <- sitesSel <<- intersect(siteVdl,siteClass)
+      sites <- sitesSel <<- intersect(intersect(siteVdl,siteClass),siteZone)
       siteX = T
     }else{
-      sites <- sitesSel <<- unique(c(siteVdl,siteClass))
+      sites <- sitesSel <<- unique(c(siteVdl,siteClass,siteZone))
       siteX = T
     }
     sites <- intersect(sites,unique(subData$vdlName))
