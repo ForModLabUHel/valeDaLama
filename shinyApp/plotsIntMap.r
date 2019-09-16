@@ -44,12 +44,6 @@ ui <- fluidPage(
                   choices = c("Light", "T",
                               "soilMoisturePercent","soilMoistureVariation","dates"),
                   selected = "dates"),
-      # selectInput(inputId = "Yaxis",
-      #             label = "Choose variable for y axis:",
-      #             choices = c("light", "air_temperature_celsius",
-      #                         "soil_moisture_percent","dSM","dates"),
-      #             selected = "soil_moisture_percent"),
-      # Input: Selector for choosing timestep ----
       selectInput(inputId = "timestep",
                   label = "Choose a timestep:",
                   choices = c("15 min","30 min","1 h","3 h","6 h","12 h","1 d"),
@@ -75,6 +69,7 @@ ui <- fluidPage(
                      label = "select sensors by vdl_id", 
                      choices = sort(unique(selTab$VDL_ID)), multiple = TRUE),
       p(),
+      actionButton("createPlots", "Update plots"),
       actionButton("clearSel", "Clear sensors"),
       checkboxGroupInput(inputId = "dataset", label = "Choose a sensor:", 
                          choices=sort(unique(selTab$vdlName)),
@@ -85,6 +80,7 @@ ui <- fluidPage(
     mainPanel(
       tabsetPanel(
         tabPanel("Map", leafletOutput(outputId = "map"),textOutput("selSens")),
+        # tabPanel("Map", leafletOutput(outputId = "map")),
         tabPanel("Plots", plotOutput(outputId = "distPlot"))
       )
     )
@@ -222,62 +218,65 @@ server <- function(input, output,session) {
   
   
   output$distPlot <- renderPlot({
-    sites <- input$dataset
-    plotData <- subData
-    
-    plotData <- plotData[dates %between% c(input$startEndDate[1], input$startEndDate[2])]
-    plotData <- plotData[vdlName %in% sites]
-    
-    if(!input$timestep %in% c("15 min","1 d")){
-      if(nrow(plotData)>1) plotData[,dates:=cut(plotData$dates, breaks=input$timestep)]
-      plotData <- plotData[, lapply(.SD, mean, na.rm=TRUE), by=list(vdlName,dates),
-                           .SDcols=c("Light","soilMoisturePercent", "T") ]
-      plotData <- plotData %>% group_by(vdlName) %>%
-        mutate(dSM = order_by(dates, soil_moisture_percent - lag(soil_moisture_percent)))
-    }
-
-    # plotData$vdlName <- factor(plotData$vdlName)
-    # plotData$dates <- as.Date(plotData$dates)
-    
-    plot1 <- ggplot(data=plotData,
-                    aes_string(x = input$Xaxis, y = "T",group="vdlName",color="vdlName", shape="vdlName")) +
-      scale_shape_manual(values=1:nlevels(plotData$vdlName)) +
-      xlab(NULL) +
-      ylab("T") +
-      geom_point()
-    plot2 <- ggplot(data=plotData,
-                    aes_string(x = input$Xaxis, y = "Light",group="vdlName",color="vdlName", shape="vdlName")) +
-      scale_shape_manual(values=1:nlevels(plotData$vdlName)) +
-      xlab(NULL) +
-      ylab("Light") +
-      geom_point()
-    plot3 <- ggplot(data=plotData,
-                    aes_string(x = input$Xaxis, y = "soilMoisturePercent",group="vdlName",color="vdlName", shape="vdlName")) +
-      scale_shape_manual(values=1:nlevels(plotData$vdlName)) +
-      xlab(input$Xaxis) +
-      ylab("soilMoisturePercent") +
-      geom_point()
-    plot4 <- ggplot(data=plotData,
-                    aes_string(x = input$Xaxis, y = "soilMoistureVariation",group="vdlName",color="vdlName", shape="vdlName")) +
-      scale_shape_manual(values=1:nlevels(plotData$vdlName)) +
-      xlab(input$Xaxis) +
-      ylab("soilMoistureVariation") +
-      geom_point()
-    
-    
-    print(ggarrange(plot1,plot2,plot3,plot4,common.legend = T),nrow=2)
+    input$createPlots
+    isolate({
+      sites <- input$dataset
+      plotData <- subData
+      
+      plotData <- plotData[dates %between% c(input$startEndDate[1], input$startEndDate[2])]
+      plotData <- plotData[vdlName %in% sites]
+      
+      if(!input$timestep %in% c("15 min","1 d")){
+        if(nrow(plotData)>1) plotData[,dates:=cut(plotData$dates, breaks=input$timestep)]
+        plotData <- plotData[, lapply(.SD, mean, na.rm=TRUE), by=list(vdlName,dates),
+                             .SDcols=c("Light","soilMoisturePercent", "T") ]
+        plotData <- plotData %>% group_by(vdlName) %>%
+          mutate(dSM = order_by(dates, soil_moisture_percent - lag(soil_moisture_percent)))
+      }
+      
+      # plotData$vdlName <- factor(plotData$vdlName)
+      # plotData$dates <- as.Date(plotData$dates)
+      
+      plot1 <- ggplot(data=plotData,
+                      aes_string(x = input$Xaxis, y = "T",group="vdlName",color="vdlName", shape="vdlName")) +
+        scale_shape_manual(values=1:nlevels(plotData$vdlName)) +
+        xlab(NULL) +
+        ylab("T") +
+        geom_point()
+      plot2 <- ggplot(data=plotData,
+                      aes_string(x = input$Xaxis, y = "Light",group="vdlName",color="vdlName", shape="vdlName")) +
+        scale_shape_manual(values=1:nlevels(plotData$vdlName)) +
+        xlab(NULL) +
+        ylab("Light") +
+        geom_point()
+      plot3 <- ggplot(data=plotData,
+                      aes_string(x = input$Xaxis, y = "soilMoisturePercent",group="vdlName",color="vdlName", shape="vdlName")) +
+        scale_shape_manual(values=1:nlevels(plotData$vdlName)) +
+        xlab(input$Xaxis) +
+        ylab("soilMoisturePercent") +
+        geom_point()
+      plot4 <- ggplot(data=plotData,
+                      aes_string(x = input$Xaxis, y = "soilMoistureVariation",group="vdlName",color="vdlName", shape="vdlName")) +
+        scale_shape_manual(values=1:nlevels(plotData$vdlName)) +
+        xlab(input$Xaxis) +
+        ylab("soilMoistureVariation") +
+        geom_point()
+      
+      
+      print(ggarrange(plot1,plot2,plot3,plot4,common.legend = T),nrow=2)
+    })
   })
   observeEvent(list(input$lastMeas,
                     input$selByClass,
                     input$selByZone,
                     input$selByVdl),{
-    output$selSens <- renderText({ 
-    sites <- input$dataset
-    paste(length(sites), "of",
-          nSites, "available sensors")
-  })
-  })
+                      output$selSens <- renderText({
+                        sites <- input$dataset
+                        paste(length(sites), "of",
+                              nSites, "available sensors")
+                      })
+                      
+                    })
 }
-
 # Create Shiny app ----
 shinyApp(ui = ui, server = server)
