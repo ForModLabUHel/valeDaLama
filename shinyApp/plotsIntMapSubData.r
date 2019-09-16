@@ -8,9 +8,9 @@ library(curl)
 library(gridExtra)
 library(leaflet);library(leaflet.extras)
 
-# load("~/Dropbox/sensing_mission/data_vdl/processedData/allData.rdata")
+load("~/Dropbox/sensing_mission/data_vdl/processedData/allData.rdata")
 # load("C:/Users/minunno/Documents/data_vdl/processedData/allData.rdata")
-load("dailyData.rdata")
+# load("dailyData.rdata")
 
 selTab[,VDL_ZONE:=substr(vdlName,1,2)]
 
@@ -76,6 +76,7 @@ ui <- fluidPage(
                      label = "select sensors by vdl_id", 
                      choices = sort(unique(selTab$VDL_ID)), multiple = TRUE),
       p(),
+      actionButton("createPlots", "Update plots"),
       actionButton("clearSel", "Clear sensors"),
       checkboxGroupInput(inputId = "dataset", label = "Choose a sensor:", 
                          choices=sort(unique(selTab$vdlName)),
@@ -86,6 +87,7 @@ ui <- fluidPage(
     mainPanel(
       tabsetPanel(
         tabPanel("Map", leafletOutput(outputId = "map"),textOutput("selSens")),
+        # tabPanel("Map", leafletOutput(outputId = "map")),
         tabPanel("Plots", plotOutput(outputId = "distPlot"))
       )
     )
@@ -221,8 +223,10 @@ server <- function(input, output,session) {
   })
   
   
-  
+  # observeEvent(input$createPlots,{
   output$distPlot <- renderPlot({
+    input$createPlots
+    isolate({
     sites <- input$dataset
     plotData <- subData
     
@@ -267,18 +271,19 @@ server <- function(input, output,session) {
     
     
     print(ggarrange(plot1,plot2,plot3,plot4,common.legend = T),nrow=2)
-  },height = 600)
+  })
+  })
   observeEvent(list(input$lastMeas,
                     input$selByClass,
                     input$selByZone,
                     input$selByVdl),{
-                      output$selSens <- renderText({ 
+                      output$selSens <- renderText({
                         sites <- input$dataset
                         paste(length(sites), "of",
                               nSites, "available sensors")
                       })
-                    })
+                    
+})
 }
-
 # Create Shiny app ----
 shinyApp(ui = ui, server = server)
