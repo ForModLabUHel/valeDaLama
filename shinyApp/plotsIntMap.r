@@ -10,9 +10,21 @@ library(leaflet);library(leaflet.extras)
 load("~/Dropbox/sensing_mission/data_vdl/processedData/allData.rdata")
 # load("C:/Users/minunno/Documents/data_vdl/processedData/allData.rdata")
 # load("allData.rdata")
+
 selTab[,VDL_ZONE:=substr(vdlName,1,2)]
 
 allData$dSM <- NA
+
+setnames(allData,c("soil_moisture_percent","air_temperature_celsius","light","dSM"),c("soilMoisturePercent","T","Light","soilMoistureVariation"))
+setnames(dailyData,c("soil_moisture_percent","air_temperature_celsius","light","dSM"),c("soilMoisturePercent","T","Light","soilMoistureVariation"))
+
+lmap <- leaflet() %>%
+  addTiles() %>%   
+  # clearShapes() %>%
+  fitBounds(-8.641081, 37.13735, -8.621029, 37.14682)  %>% 
+  addCircleMarkers(lat = selTab$LAT, lng = selTab$LON, 
+                   label=selTab$vdlName,radius = 3) #%>% 
+
 
 
 ## @knitr plots
@@ -29,31 +41,27 @@ ui <- fluidPage(
     sidebarPanel(
       selectInput(inputId = "Xaxis",
                   label = "Choose variable for x axis:",
-                  choices = c("light", "air_temperature_celsius",
-                              "soil_moisture_percent","dSM","dates"),
+                  choices = c("Light", "T",
+                              "soilMoisturePercent","soilMoistureVariation","dates"),
                   selected = "dates"),
-      selectInput(inputId = "Yaxis",
-                  label = "Choose variable for y axis:",
-                  choices = c("light", "air_temperature_celsius",
-                              "soil_moisture_percent","dSM","dates"),
-                  selected = "soil_moisture_percent"),
+      # selectInput(inputId = "Yaxis",
+      #             label = "Choose variable for y axis:",
+      #             choices = c("light", "air_temperature_celsius",
+      #                         "soil_moisture_percent","dSM","dates"),
+      #             selected = "soil_moisture_percent"),
       # Input: Selector for choosing timestep ----
       selectInput(inputId = "timestep",
                   label = "Choose a timestep:",
                   choices = c("15 min","30 min","1 h","3 h","6 h","12 h","1 d"),
                   selected = "1 d"),
       
-      selectInput(inputId = "startdate",
-                  label = "Choose starting date:",
-                  choices = startDates),
-      selectInput(inputId = "enddate",
-                  label = "Choose end date:",
-                  choices = endDates,
-                  selected = maxEndDates),
-      selectInput(inputId = "lastMeas",
-                  label = "Choose sensors according to last measurements date:",
-                  choices = lastSoilMeass,
-                  selected = minLastSoilMeas),
+      sliderInput("startEndDate", "Select period range:",
+                  min = min(startDates), max = maxEndDates,timeFormat="%d,%b,%y",
+                  value = c(min(startDates),maxEndDates)),
+      sliderInput(inputId = "lastMeas",label="Filter sensors according to last measurements date:",
+                  min = min(lastSoilMeass), max = max(lastSoilMeass),timeFormat="%d,%b,%y",
+                  value = min(lastSoilMeass),animate = TRUE),
+      
       selectizeInput(inputId = "selByClass",
                      label = "select sensors by class", 
                      choices = sort(unique(selTab$VDL_CLASS)), multiple = TRUE),
@@ -75,20 +83,13 @@ ui <- fluidPage(
     
     # Main panel for displaying outputs ----
     mainPanel(
-      
-      # Output: Histogram ----
-      plotOutput(outputId = "distPlot"),
-      leafletOutput(outputId = "map")
+      tabsetPanel(
+        tabPanel("Map", leafletOutput(outputId = "map"),textOutput("selSens")),
+        tabPanel("Plots", plotOutput(outputId = "distPlot"))
+      )
     )
   )
 )
-
-lmap <- leaflet() %>%
-  addTiles() %>%   
-  # clearShapes() %>%
-  fitBounds(-8.641081, 37.13735, -8.621029, 37.14682)  %>% 
-  addCircleMarkers(lat = selTab$LAT, lng = selTab$LON, 
-                   label=selTab$vdlName,radius = 3) #%>% 
 
 
 # Define server logic required to draw a histogram ----
@@ -191,7 +192,7 @@ server <- function(input, output,session) {
     siteZone <- selTab$vdlName[selTab$VDL_ZONE %in% input$selByZone]
     # siteSel <- input$dataset
     if(is.null(input$selByVdl) & is.null(input$selByClass) & is.null(input$selByZone)){
-      sites <- unique(allData$vdlName)
+      sites <- unique(subData$vdlName)
       siteX = F; sitesSel <<- NULL
     }else if(input$selSens == "and"){
       sites <- sitesSel <<- intersect(intersect(siteVdl,siteClass),siteZone)
@@ -224,35 +225,59 @@ server <- function(input, output,session) {
     sites <- input$dataset
     plotData <- subData
     
-    plotData <- plotData[dates %between% c(input$startdate, input$enddate)]
+    plotData <- plotData[dates %between% c(input$startEndDate[1], input$startEndDate[2])]
     plotData <- plotData[vdlName %in% sites]
-    if(nrow(plotData)>1) plotData[,dates:=cut(plotData$dates, breaks=input$timestep)]
-    plotData <- plotData[, lapply(.SD, mean, na.rm=TRUE), by=list(vdlName,dates),
-                         .SDcols=c("light","soil_moisture_percent", "air_temperature_celsius") ]
-    plotData <- plotData %>% group_by(vdlName) %>%
-      mutate(dSM = order_by(dates, soil_moisture_percent - lag(soil_moisture_percent)))
     
-    
+    if(!input$timestep %in% c("15 min","1 d")){
+      if(nrow(plotData)>1) plotData[,dates:=cut(plotData$dates, breaks=input$timestep)]
+      plotData <- plotData[, lapply(.SD, mean, na.rm=TRUE), by=list(vdlName,dates),
+                           .SDcols=c("Light","soilMoisturePercent", "T") ]
+      plotData <- plotData %>% group_by(vdlName) %>%
+        mutate(dSM = order_by(dates, soil_moisture_percent - lag(soil_moisture_percent)))
+    }
+
     # plotData$vdlName <- factor(plotData$vdlName)
-    plotData$dates <- as.Date(plotData$dates)
+    # plotData$dates <- as.Date(plotData$dates)
     
     plot1 <- ggplot(data=plotData,
-                    aes_string(x = input$Xaxis, y = input$Yaxis,group="vdlName",color="vdlName", shape="vdlName")) +
+                    aes_string(x = input$Xaxis, y = "T",group="vdlName",color="vdlName", shape="vdlName")) +
+      scale_shape_manual(values=1:nlevels(plotData$vdlName)) +
+      xlab(NULL) +
+      ylab("T") +
+      geom_point()
+    plot2 <- ggplot(data=plotData,
+                    aes_string(x = input$Xaxis, y = "Light",group="vdlName",color="vdlName", shape="vdlName")) +
+      scale_shape_manual(values=1:nlevels(plotData$vdlName)) +
+      xlab(NULL) +
+      ylab("Light") +
+      geom_point()
+    plot3 <- ggplot(data=plotData,
+                    aes_string(x = input$Xaxis, y = "soilMoisturePercent",group="vdlName",color="vdlName", shape="vdlName")) +
       scale_shape_manual(values=1:nlevels(plotData$vdlName)) +
       xlab(input$Xaxis) +
-      ylab(input$Yaxis) +
-      # scale_x_date(labels = date_format("%m-%Y"))+
-      # theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-      # scale_x_discrete(breaks = round(seq(as.Date(input$startdate), as.Date(input$enddate),
-      #                                       length.out = 5),1)) +
-      # geom_line()
-      geom_point() +
-      labs(caption = paste(length(unique(plotData$vdlName)), "of",
-                           nSites, "available sensors"))
+      ylab("soilMoisturePercent") +
+      geom_point()
+    plot4 <- ggplot(data=plotData,
+                    aes_string(x = input$Xaxis, y = "soilMoistureVariation",group="vdlName",color="vdlName", shape="vdlName")) +
+      scale_shape_manual(values=1:nlevels(plotData$vdlName)) +
+      xlab(input$Xaxis) +
+      ylab("soilMoistureVariation") +
+      geom_point()
     
-    print(plot1)
-  })  
+    
+    print(ggarrange(plot1,plot2,plot3,plot4,common.legend = T),nrow=2)
+  })
+  observeEvent(list(input$lastMeas,
+                    input$selByClass,
+                    input$selByZone,
+                    input$selByVdl),{
+    output$selSens <- renderText({ 
+    sites <- input$dataset
+    paste(length(sites), "of",
+          nSites, "available sensors")
+  })
+  })
 }
 
 # Create Shiny app ----
-shinyApp(ui = ui, server = server,options = list(height = 600,width=800))
+shinyApp(ui = ui, server = server)
