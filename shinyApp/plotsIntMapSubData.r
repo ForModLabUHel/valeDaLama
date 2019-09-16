@@ -248,7 +248,7 @@ server <- function(input, output,session) {
                            nSites, "available sensors"))
     
     print(plot1)
-  },height = 400,width = 600)  
+  })  
 }
 
 # Create Shiny app ----
