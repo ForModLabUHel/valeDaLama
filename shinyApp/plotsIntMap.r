@@ -5,6 +5,7 @@ library(ggplot2)
 library(dplyr)
 library(curl)
 library(gridExtra)
+library(ggpubr)
 library(leaflet);library(leaflet.extras)
 
 load("~/Dropbox/sensing_mission/data_vdl/processedData/allData.rdata")
