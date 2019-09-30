@@ -7,6 +7,7 @@ library(curl)
 library(gridExtra)
 library(ggpubr)
 library(leaflet);library(leaflet.extras)
+library(magrittr)
 
 load("~/Dropbox/sensing_mission/data_vdl/processedData/allData.rdata")
 # load("C:/Users/minunno/Documents/data_vdl/processedData/allData.rdata")
