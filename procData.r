@@ -1,11 +1,14 @@
+# This script is for processing the new set of downloaded data (.csv) files
+# In /Dropbox/sensing_mission/data_vdl/newDataCollection directory
+# Updates files in .../processedData directory, and
+# Creates a new directory in .../storedData (named "processed_YYYY-MM-DD" per date of process run)
+
 library(lubridate)
 library(curl)
 library(stringr)
 library(data.table)
 library(dplyr)
 # source("utils.r")
-
-
 
 path <- "/Users/walterludwick/Dropbox/sensing_mission/data_vdl/" #wl
 # path <- "C:/Users/minunno/Documents/data_vdl/" #fm
