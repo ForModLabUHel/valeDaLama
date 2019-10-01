@@ -70,7 +70,7 @@ dataX$dates <- round_date(dataX$dates,"15 minutes")
 
 ###merge dataX and coordinates
 setkey(dataX,"id")
-names(ancDataX)[1] <- 'id'
+# names(ancDataX)[1] <- 'id'
 setkey(ancDataX,"id")
 dataX <- merge(dataX,ancDataX[,.(id,LAT,LON,vdlName)],by="id")
 # datesAll <- as.data.table(datesAll)
@@ -126,31 +126,31 @@ for(i in unique(allData$id)){
 
 
 
-# ##compute daily mean
-dailyData <- data.table()
-for(i in unique(allData$id)){
-  dailyMean <- myData[[i]] %>%
-    mutate(dates = floor_date(dates,unit="day")) %>%
-    group_by(dates) %>%
-    summarize(soil_moisture_percent = mean(soil_moisture_percent,na.rm=T))
-  
-  NAs_Ratio <- myData[[i]] %>%
-    mutate(dates = floor_date(dates,unit="day")) %>%
-    group_by(dates) %>%
-    summarize(NAs_Ratio = sum(is.na(soil_moisture_percent))/length(soil_moisture_percent))
-  
-  # 
-  dailyMean <- data.table(dailyMean)
-  NAs_Ratio <- data.table(NAs_Ratio)
-  dailyMean <- merge(dailyMean,NAs_Ratio)
-  dailyMean[,id:= i]
-  dailyMean$soil_moisture_percent[which(is.nan(dailyMean$soil_moisture_percent))] <- NA
-  dailyMean$dSM[2:nrow(dailyMean)] = dailyMean$soil_moisture_percent[2:nrow(dailyMean)]-dailyMean$soil_moisture_percent[1:(nrow(dailyMean)-1)]
-  dailyData <- rbind(dailyData,dailyMean)
-}
-
-dailyData$dates <- as.character(dailyData$dates)
-fwrite(dailyData, file = paste0(path,"processedData/dailyData.csv"))
+# # ##compute daily mean
+# dailyData <- data.table()
+# for(i in unique(allData$id)){
+#   dailyMean <- myData[[i]] %>%
+#     mutate(dates = floor_date(dates,unit="day")) %>%
+#     group_by(dates) %>%
+#     summarize(soil_moisture_percent = mean(soil_moisture_percent,na.rm=T))
+#   
+#   NAs_Ratio <- myData[[i]] %>%
+#     mutate(dates = floor_date(dates,unit="day")) %>%
+#     group_by(dates) %>%
+#     summarize(NAs_Ratio = sum(is.na(soil_moisture_percent))/length(soil_moisture_percent))
+#   
+#   # 
+#   dailyMean <- data.table(dailyMean)
+#   NAs_Ratio <- data.table(NAs_Ratio)
+#   dailyMean <- merge(dailyMean,NAs_Ratio)
+#   dailyMean[,id:= i]
+#   dailyMean$soil_moisture_percent[which(is.nan(dailyMean$soil_moisture_percent))] <- NA
+#   dailyMean$dSM[2:nrow(dailyMean)] = dailyMean$soil_moisture_percent[2:nrow(dailyMean)]-dailyMean$soil_moisture_percent[1:(nrow(dailyMean)-1)]
+#   dailyData <- rbind(dailyData,dailyMean)
+# }
+# 
+# dailyData$dates <- as.character(dailyData$dates)
+# fwrite(dailyData, file = paste0(path,"processedData/dailyData.csv"))
 
 
 ####Move processed csv file to storedData folder and remove original folder
