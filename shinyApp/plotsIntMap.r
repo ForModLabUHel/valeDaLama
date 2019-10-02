@@ -8,8 +8,8 @@ library(gridExtra)
 library(ggpubr)
 library(leaflet);library(leaflet.extras)
 
-# load("~/Dropbox/sensing_mission/data_vdl/processedData/allData.rdata")
-load("C:/Users/minunno/Documents/data_vdl/processedData/allData.rdata")
+load("~/Dropbox/sensing_mission/data_vdl/processedData/allData.rdata")
+# load("C:/Users/minunno/Documents/data_vdl/processedData/allData.rdata")
 # load("allData.rdata")
 
 selTab[,VDL_ZONE:=substr(vdlName,1,2)]
