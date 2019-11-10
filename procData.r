@@ -5,7 +5,7 @@ library(data.table)
 library(dplyr)
 # source("utils.r")
 
-##test
+##2nd test
 
 path <- "/Users/walterludwick/Dropbox/sensing_mission/data_vdl/" #wl
 # path <- "C:/Users/minunno/Documents/data_vdl/" #fm
